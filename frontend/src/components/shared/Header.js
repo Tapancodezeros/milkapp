@@ -1,7 +1,7 @@
-import { LogOut, Briefcase, Store, Moon, Sun } from 'lucide-react';
+import { LogOut, Briefcase, Store, Moon, Sun, Settings } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-const Header = ({ user, onLogout, role, extra }) => {
+const Header = ({ user, onLogout, role, extra, onSettings }) => {
     const { isDarkMode, toggleTheme } = useTheme();
 
     return (
@@ -29,13 +29,23 @@ const Header = ({ user, onLogout, role, extra }) => {
             <div className="flex items-center gap-6">
                 {extra}
 
-                <button
-                    onClick={toggleTheme}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95 border border-slate-100 dark:border-slate-700 shadow-sm"
-                    title={isDarkMode ? "Light Mode" : "Dark Mode"}
-                >
-                    {isDarkMode ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={toggleTheme}
+                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95 border border-slate-100 dark:border-slate-700 shadow-sm"
+                        title={isDarkMode ? "Light Mode" : "Dark Mode"}
+                    >
+                        {isDarkMode ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
+                    </button>
+
+                    <button
+                        onClick={onSettings}
+                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-95 border border-slate-100 dark:border-slate-700 shadow-sm"
+                        title="Profile Settings"
+                    >
+                        <Settings size={20} strokeWidth={2.5} />
+                    </button>
+                </div>
 
                 <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
 

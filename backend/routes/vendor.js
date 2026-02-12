@@ -3,12 +3,13 @@ const router = express.Router();
 const { Vendor, Transaction, InventoryHistory, Subscription, Customer } = require('../models');
 const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
+const ApiResponse = require('../utils/apiResponse');
 
 // GET /api/vendor/me
 router.get('/me', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return res.status(403).json({ error: "Not a vendor" });
-        const vendor = await Vendor.findByPk(req.user.id, { attributes: ['id', 'name', 'rate', 'availableMilk'] });
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
+        const vendor = await Vendor.findByPk(req.user.id, { attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable'] });
 
         const today = new Date().toISOString().split('T')[0];
         const processedCount = await Transaction.count({
@@ -19,16 +20,16 @@ router.get('/me', authenticateToken, async (req, res) => {
             }
         });
 
-        res.json({ ...vendor.toJSON(), todayProcessed: processedCount > 0 });
+        return ApiResponse.success(res, "Vendor data fetched", { ...vendor.toJSON(), todayProcessed: processedCount > 0 });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
 // PUT /api/vendor/update
 router.put('/update', authenticateToken, Validation.vendorUpdate, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return res.status(403).json({ error: "Not a vendor" });
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
         const { rate, addMilk } = req.body;
 
         const vendor = await Vendor.findByPk(req.user.id);
@@ -41,7 +42,7 @@ router.put('/update', authenticateToken, Validation.vendorUpdate, async (req, re
             const milkToAdd = parseFloat(addMilk);
             const newTotal = (parseFloat(vendor.availableMilk) || 0) + milkToAdd;
             if (newTotal > 1000) {
-                return res.status(400).json({ error: `Cannot exceed total stock of 1000L. Current: ${vendor.availableMilk}L, Max possible add: ${1000 - vendor.availableMilk}L` });
+                return ApiResponse.error(res, `Cannot exceed total stock of 1000L. Current: ${vendor.availableMilk}L, Max possible add: ${1000 - vendor.availableMilk}L`, 400);
             }
 
             vendor.availableMilk = newTotal;
@@ -49,9 +50,9 @@ router.put('/update', authenticateToken, Validation.vendorUpdate, async (req, re
         }
 
         await vendor.save();
-        res.json(vendor);
+        return ApiResponse.success(res, "Vendor updated", vendor);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -107,31 +108,31 @@ router.post('/process-subscriptions', authenticateToken, async (req, res) => {
         }
 
         await vendor.save();
-        res.json({ message: `Processed ${processedCount} new orders. (Skipped ${skippedCount} already processed)`, remainingMilk: vendor.availableMilk });
+        return ApiResponse.success(res, `Processed ${processedCount} new orders. (Skipped ${skippedCount} already processed)`, { remainingMilk: vendor.availableMilk });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
 // GET /api/vendor/inventory-history
 router.get('/inventory-history', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return res.status(403).json({ error: "Not a vendor" });
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
         const history = await InventoryHistory.findAll({
             where: { vendorId: req.user.id },
             order: [['createdAt', 'DESC']],
             limit: 10
         });
-        res.json(history);
+        return ApiResponse.success(res, "Inventory history fetched", history);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
 // GET /api/vendor/reports
 router.get('/reports', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return res.status(403).json({ error: "Not a vendor" });
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
 
         const transactions = await Transaction.findAll({ where: { vendorId: req.user.id } });
         const monthlyData = {};
@@ -143,9 +144,46 @@ router.get('/reports', authenticateToken, async (req, res) => {
             monthlyData[month].volume += parseFloat(t.quantity);
         });
 
-        res.json(monthlyData);
+        return ApiResponse.success(res, "Reports fetched", monthlyData);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
+    }
+});
+
+router.put('/profile', authenticateToken, Validation.updateProfile, async (req, res) => {
+    try {
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
+        const { name, phone, password } = req.body;
+        const vendor = await Vendor.findByPk(req.user.id);
+
+        if (name) vendor.name = name;
+        if (phone) vendor.phone = phone;
+        if (password) {
+            const bcrypt = require('bcryptjs');
+            vendor.password = await bcrypt.hash(password, 10);
+        }
+
+        await vendor.save();
+        return ApiResponse.success(res, "Profile updated successfully", {
+            id: vendor.id,
+            name: vendor.name,
+            email: vendor.email,
+            phone: vendor.phone
+        });
+    } catch (err) {
+        return ApiResponse.error(res, err.message, 500);
+    }
+});
+
+router.put('/toggle-availability', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Not a vendor", 403);
+        const vendor = await Vendor.findByPk(req.user.id);
+        vendor.isAvailable = !vendor.isAvailable;
+        await vendor.save();
+        return ApiResponse.success(res, `Availability set to ${vendor.isAvailable ? 'Active' : 'Holiday'}`, { isAvailable: vendor.isAvailable });
+    } catch (err) {
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 

@@ -19,10 +19,17 @@ const VendorCard = ({ vendor, onBuy, onSubscribe }) => {
                         </div>
                     </div>
                 </div>
-                <StatusBadge
-                    status={vendor.availableMilk > 0 ? 'In Stock' : 'Out of Stock'}
-                    variant={vendor.availableMilk > 0 ? 'active' : 'cancelled'}
-                />
+                <div className="flex flex-col items-end gap-2">
+                    <StatusBadge
+                        status={vendor.isAvailable ? (vendor.availableMilk > 0 ? 'In Stock' : 'Out of Stock') : 'On Holiday'}
+                        variant={vendor.isAvailable ? (vendor.availableMilk > 0 ? 'active' : 'cancelled') : 'paused'}
+                    />
+                    {!vendor.isAvailable && (
+                        <div className="px-2 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[8px] font-black uppercase tracking-widest rounded-lg border border-orange-100 dark:border-orange-900/30">
+                            Returning Soon
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="relative z-10 p-5 bg-slate-50/50 dark:bg-slate-800/30 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 mb-8 flex justify-between items-center group-hover:bg-white dark:group-hover:bg-slate-800 transition-all duration-500">
@@ -43,14 +50,15 @@ const VendorCard = ({ vendor, onBuy, onSubscribe }) => {
             <div className="relative z-10 grid grid-cols-2 gap-4">
                 <button
                     onClick={() => onBuy(vendor)}
-                    disabled={vendor.availableMilk <= 0}
+                    disabled={vendor.availableMilk <= 0 || !vendor.isAvailable}
                     className="bg-slate-900 dark:bg-slate-800 text-white rounded-2xl py-4 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-20 shadow-lg shadow-slate-200 dark:shadow-none"
                 >
                     Buy Now
                 </button>
                 <button
                     onClick={() => onSubscribe(vendor)}
-                    className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 rounded-2xl py-4 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-500/5"
+                    disabled={!vendor.isAvailable}
+                    className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 rounded-2xl py-4 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-500/5 disabled:opacity-20"
                 >
                     Subscribe
                 </button>

@@ -9,8 +9,8 @@ class Validation {
     }
 
     static login(req, res, next) {
-        const { email, password, role } = req.body;
-        if (!email || !password || !role) return res.status(400).json({ error: "Missing required fields" });
+        const { identifier, password, role } = req.body;
+        if (!identifier || !password || !role) return res.status(400).json({ error: "Missing required fields" });
         next();
     }
 
@@ -42,6 +42,26 @@ class Validation {
     static topup(req, res, next) {
         const { amount } = req.body;
         if (!amount || amount < 10 || amount > 50000) return res.status(400).json({ error: "Topup amount must be between ₹10 and ₹50,000" });
+        next();
+    }
+
+    static forgotPassword(req, res, next) {
+        const { email, role } = req.body;
+        if (!email || !role) return res.status(400).json({ error: "Email and Role are required" });
+        next();
+    }
+
+    static resetPassword(req, res, next) {
+        const { token, newPassword, role } = req.body;
+        if (!token || !newPassword || !role) return res.status(400).json({ error: "Token, New Password, and Role are required" });
+        if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+        next();
+    }
+
+    static updateProfile(req, res, next) {
+        const { name, phone, password } = req.body;
+        if (name && (name.length < 2 || name.length > 50)) return res.status(400).json({ error: "Name must be between 2 and 50 characters" });
+        if (password && password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
         next();
     }
 }

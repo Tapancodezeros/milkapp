@@ -3,15 +3,16 @@ const router = express.Router();
 const { Subscription, Vendor, Customer, Transaction } = require('../models');
 const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
+const ApiResponse = require('../utils/apiResponse');
 
 // POST /api/subscribe
 router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return res.status(403).json({ error: "Only customers can subscribe" });
+        if (req.user.role !== 'customer') return ApiResponse.error(res, "Only customers can subscribe", 403);
         const { vendorId, quantity, duration } = req.body;
 
         const vendor = await Vendor.findByPk(vendorId);
-        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+        if (!vendor) return ApiResponse.error(res, "Vendor not found", 404);
 
         const existingSub = await Subscription.findOne({
             where: {
@@ -22,7 +23,7 @@ router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, r
         });
 
         if (existingSub) {
-            return res.status(400).json({ error: "You already have an active or paused subscription with this vendor." });
+            return ApiResponse.error(res, "You already have an active or paused subscription with this vendor.", 400);
         }
 
         const startDate = new Date();
@@ -41,9 +42,9 @@ router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, r
             endDate: endDate.toISOString().split('T')[0],
             fixedRate: vendor.rate
         });
-        res.json(sub);
+        return ApiResponse.success(res, "Subscribed successfully", sub, 201);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -57,9 +58,9 @@ router.get('/subscriptions', authenticateToken, async (req, res) => {
             : [{ model: Vendor, attributes: ['name', 'rate'] }];
 
         const subs = await Subscription.findAll({ where, include });
-        res.json(subs);
+        return ApiResponse.success(res, "Subscriptions fetched", subs);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -69,21 +70,21 @@ router.put('/subscriptions/:id', authenticateToken, async (req, res) => {
         const { status, quantity } = req.body;
         const sub = await Subscription.findByPk(req.params.id);
 
-        if (!sub) return res.status(404).json({ error: "Subscription not found" });
+        if (!sub) return ApiResponse.error(res, "Subscription not found", 404);
 
         if (req.user.role === 'customer' && sub.customerId !== req.user.id) {
-            return res.status(403).json({ error: "Unauthorized" });
+            return ApiResponse.error(res, "Unauthorized", 403);
         }
         if (req.user.role === 'vendor' && sub.vendorId !== req.user.id) {
-            return res.status(403).json({ error: "Unauthorized" });
+            return ApiResponse.error(res, "Unauthorized", 403);
         }
 
         if (status) sub.status = status;
         if (quantity !== undefined) sub.quantity = quantity;
         await sub.save();
-        res.json(sub);
+        return ApiResponse.success(res, "Subscription updated", sub);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -91,14 +92,14 @@ router.put('/subscriptions/:id', authenticateToken, async (req, res) => {
 router.put('/subscriptions/:id/toggle', authenticateToken, async (req, res) => {
     try {
         const sub = await Subscription.findByPk(req.params.id);
-        if (!sub) return res.status(404).json({ error: "Subscription not found" });
-        if (sub.customerId !== req.user.id) return res.status(403).json({ error: "Unauthorized" });
+        if (!sub) return ApiResponse.error(res, "Subscription not found", 404);
+        if (sub.customerId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
 
         sub.status = sub.status === 'active' ? 'paused' : 'active';
         await sub.save();
-        res.json(sub);
+        return ApiResponse.success(res, `Subscription ${sub.status}`, sub);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -106,14 +107,14 @@ router.put('/subscriptions/:id/toggle', authenticateToken, async (req, res) => {
 router.put('/subscriptions/:id/cancel', authenticateToken, async (req, res) => {
     try {
         const sub = await Subscription.findByPk(req.params.id);
-        if (!sub) return res.status(404).json({ error: "Subscription not found" });
-        if (sub.customerId !== req.user.id) return res.status(403).json({ error: "Unauthorized" });
+        if (!sub) return ApiResponse.error(res, "Subscription not found", 404);
+        if (sub.customerId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
 
         sub.status = 'cancelled';
         await sub.save();
-        res.json(sub);
+        return ApiResponse.success(res, "Subscription cancelled", sub);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 

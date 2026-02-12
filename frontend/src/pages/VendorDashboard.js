@@ -7,7 +7,9 @@ import {
     Loader2,
     TrendingUp,
     Users,
-    Zap
+    Zap,
+    Palmtree,
+    Power
 } from 'lucide-react';
 
 import Header from '../components/shared/Header';
@@ -16,13 +18,14 @@ import QuickControls from '../components/vendor/QuickControls';
 import FulfillmentEngine from '../components/vendor/FulfillmentEngine';
 import AnalyticsChart from '../components/vendor/AnalyticsChart';
 import LedgerStream from '../components/shared/LedgerStream';
+import ProfileModal from '../components/shared/ProfileModal';
 
 import { API_BASE_URL } from '../api/config';
 
 const VendorDashboard = () => {
     const [sales, setSales] = useState([]);
     const [subscriptions, setSubscriptions] = useState([]);
-    const [stats, setStats] = useState({ availableMilk: 0, rate: 0, todayProcessed: false });
+    const [stats, setStats] = useState({ availableMilk: 0, rate: 0, todayProcessed: false, isAvailable: true });
     const [monthlyReports, setMonthlyReports] = useState({});
     const [newRate, setNewRate] = useState('');
     const [addStock, setAddStock] = useState('');
@@ -31,6 +34,7 @@ const VendorDashboard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [paginatedSales, setPaginatedSales] = useState([]);
+    const [showProfile, setShowProfile] = useState(false);
     const navigate = useNavigate();
 
     const token = localStorage.getItem('token');
@@ -42,8 +46,8 @@ const VendorDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             const meRes = await axios.get(`${API_BASE_URL}/vendor/me`, config);
-            setStats(meRes.data);
-            setNewRate(meRes.data.rate);
+            setStats(meRes.data.data);
+            setNewRate(meRes.data.data.rate);
 
             const [salesRes, subRes, reportsRes] = await Promise.all([
                 axios.get(`${API_BASE_URL}/transactions`, config),
@@ -51,9 +55,9 @@ const VendorDashboard = () => {
                 axios.get(`${API_BASE_URL}/vendor/reports`, config),
             ]);
 
-            setSales(salesRes.data);
-            setSubscriptions(subRes.data);
-            setMonthlyReports(reportsRes.data);
+            setSales(salesRes.data.data);
+            setSubscriptions(subRes.data.data);
+            setMonthlyReports(reportsRes.data.data);
         } catch (err) {
             console.error("Global Fetch Error:", err);
             toast.error("Failed to load core data.");
@@ -66,8 +70,8 @@ const VendorDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const paginatedRes = await axios.get(`${API_BASE_URL}/transactions?paginate=true&page=${currentPage}&limit=10`, config);
-            setPaginatedSales(paginatedRes.data.data);
-            setTotalPages(paginatedRes.data.totalPages);
+            setPaginatedSales(paginatedRes.data.data.data);
+            setTotalPages(paginatedRes.data.data.totalPages);
         } catch (err) {
             console.error("Paginated Fetch Error:", err);
         }
@@ -126,6 +130,17 @@ const VendorDashboard = () => {
         }
     };
 
+    const toggleAvailability = async () => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const res = await axios.put(`${API_BASE_URL}/vendor/toggle-availability`, {}, config);
+            toast.success(res.data.message);
+            setRefreshKey(old => old + 1);
+        } catch (err) {
+            toast.error("Failed to toggle availability");
+        }
+    };
+
     const handleLogout = () => {
         localStorage.clear();
         navigate('/');
@@ -165,24 +180,31 @@ const VendorDashboard = () => {
                 user={user}
                 role="vendor"
                 onLogout={handleLogout}
+                onSettings={() => setShowProfile(true)}
                 extra={(
                     <div className="hidden md:flex flex-col items-end border-r border-slate-200 dark:border-slate-800 pr-6 mr-6">
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</span>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Shop Status</span>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Online</span>
+                            <div className={`w-2 h-2 rounded-full ${stats.isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'} `}></div>
+                            <span className={`text-xs font-bold ${stats.isAvailable ? 'text-slate-700 dark:text-slate-300' : 'text-red-500'} `}>
+                                {stats.isAvailable ? 'Active' : 'Holiday Mode'}
+                            </span>
                         </div>
                     </div>
                 )}
             />
 
             <main className="flex-1 p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-10">
-                {/* Modern Hero Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="relative group cursor-pointer" onClick={toggleAvailability}>
+                        <StatsCard label="Operating Mode" val={stats.isAvailable ? 'Active' : 'Holiday'} icon={stats.isAvailable ? Zap : Palmtree} color={stats.isAvailable ? 'emerald' : 'orange'} sub="Click to toggle" />
+                        <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Power size={14} className="text-white" />
+                        </div>
+                    </div>
                     <StatsCard label="Stock" val={`${stats.availableMilk} L`} icon={Milk} color="blue" sub="Current amount" />
                     <StatsCard label="Customers" val={subscriptions.length} icon={Users} color="indigo" sub="Active subscribers" />
                     <StatsCard label="Revenue" val={`₹${totalRev.toFixed(0)}`} icon={TrendingUp} color="emerald" sub="Total earned" />
-                    <StatsCard label="Sold" val={`${totalQty.toFixed(1)} L`} icon={Zap} color="orange" sub="Total volume" />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -218,6 +240,17 @@ const VendorDashboard = () => {
             <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-8 text-center transition-colors">
                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.4em]">Dairy Hub • Dashboard</p>
             </footer>
+
+            <ProfileModal
+                isOpen={showProfile}
+                onClose={() => setShowProfile(false)}
+                user={stats}
+                role="vendor"
+                onUpdate={(updatedData) => {
+                    setStats(prev => ({ ...prev, ...updatedData }));
+                    localStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
+                }}
+            />
         </div>
     );
 };

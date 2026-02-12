@@ -3,18 +3,19 @@ const router = express.Router();
 const { Transaction, Customer, Vendor } = require('../models');
 const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
+const ApiResponse = require('../utils/apiResponse');
 
 // POST /api/buy
 router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return res.status(403).json({ error: "Only customers can buy milk" });
+        if (req.user.role !== 'customer') return ApiResponse.error(res, "Only customers can buy milk", 403);
         const { vendorId, quantity } = req.body;
 
         const vendor = await Vendor.findByPk(vendorId);
-        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+        if (!vendor) return ApiResponse.error(res, "Vendor not found", 404);
 
         if (vendor.availableMilk < quantity) {
-            return res.status(400).json({ error: `Not enough milk. Available: ${vendor.availableMilk} L` });
+            return ApiResponse.error(res, `Not enough milk. Available: ${vendor.availableMilk} L`, 400);
         }
 
         const rate = vendor.rate;
@@ -22,7 +23,7 @@ router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
 
         const customer = await Customer.findByPk(req.user.id);
         if (!customer || customer.walletBalance < amount) {
-            return res.status(400).json({ error: "Insufficient wallet balance. Please top up." });
+            return ApiResponse.error(res, "Insufficient wallet balance. Please top up.", 400);
         }
 
         const transaction = await Transaction.create({
@@ -40,9 +41,9 @@ router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
         vendor.availableMilk -= quantity;
         await vendor.save();
 
-        res.json(transaction);
+        return ApiResponse.success(res, "Purchase successful", transaction, 201);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -67,7 +68,7 @@ router.get('/transactions', authenticateToken, async (req, res) => {
                 offset: offset
             });
 
-            return res.json({
+            return ApiResponse.success(res, "Paginated transactions fetched", {
                 data: rows,
                 total: count,
                 page: parseInt(page),
@@ -81,9 +82,9 @@ router.get('/transactions', authenticateToken, async (req, res) => {
             order: [['createdAt', 'DESC']]
         });
 
-        res.json(transactions);
+        return ApiResponse.success(res, "Transactions fetched", transactions);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -91,12 +92,12 @@ router.get('/transactions', authenticateToken, async (req, res) => {
 router.put('/transactions/:id/verify', authenticateToken, async (req, res) => {
     try {
         const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return res.status(404).json({ error: "Transaction not found" });
-        if (req.user.id !== transaction.customerId) return res.status(403).json({ error: "Unauthorized" });
+        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
+        if (req.user.id !== transaction.customerId) return ApiResponse.error(res, "Unauthorized", 403);
 
         const { status } = req.body;
         if (!['delivered', 'not_delivered'].includes(status)) {
-            return res.status(400).json({ error: "Invalid status. Use 'delivered' or 'not_delivered'." });
+            return ApiResponse.error(res, "Invalid status. Use 'delivered' or 'not_delivered'.", 400);
         }
 
         transaction.deliveryStatus = status;
@@ -105,47 +106,47 @@ router.put('/transactions/:id/verify', authenticateToken, async (req, res) => {
         const updatedTransaction = await Transaction.findByPk(req.params.id, {
             include: [{ model: Vendor, attributes: ['name', 'phone'] }]
         });
-        res.json(updatedTransaction);
+        return ApiResponse.success(res, "Delivery status verified", updatedTransaction);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
 // PUT /api/transactions/:id/delivery
 router.put('/transactions/:id/delivery', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return res.status(403).json({ error: "Only vendors can updates delivery" });
+        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Only vendors can update delivery", 403);
 
         const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return res.status(404).json({ error: "Transaction not found" });
-        if (transaction.vendorId !== req.user.id) return res.status(403).json({ error: "Unauthorized" });
+        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
+        if (transaction.vendorId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
 
         const { status } = req.body;
         if (!['delivered', 'not_delivered'].includes(status)) {
-            return res.status(400).json({ error: "Invalid status. Use 'delivered' or 'not_delivered'." });
+            return ApiResponse.error(res, "Invalid status. Use 'delivered' or 'not_delivered'.", 400);
         }
 
         transaction.deliveryStatus = status;
         await transaction.save();
-        res.json(transaction);
+        return ApiResponse.success(res, "Delivery status updated", transaction);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
 // PUT /api/transactions/:id/pay
 router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return res.status(403).json({ error: "Only customers can pay" });
+        if (req.user.role !== 'customer') return ApiResponse.error(res, "Only customers can pay", 403);
 
         const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return res.status(404).json({ error: "Transaction not found" });
-        if (transaction.customerId !== req.user.id) return res.status(403).json({ error: "Unauthorized" });
-        if (transaction.status !== 'pending') return res.status(400).json({ error: "Transaction is not pending" });
+        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
+        if (transaction.customerId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
+        if (transaction.status !== 'pending') return ApiResponse.error(res, "Transaction is not pending", 400);
 
         const customer = await Customer.findByPk(req.user.id);
         if (customer.walletBalance < transaction.amount) {
-            return res.status(400).json({ error: "Insufficient wallet balance. Please top up." });
+            return ApiResponse.error(res, "Insufficient wallet balance. Please top up.", 400);
         }
 
         customer.walletBalance -= transaction.amount;
@@ -154,9 +155,9 @@ router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
         transaction.status = 'completed';
         await transaction.save();
 
-        res.json({ message: "Payment successful", balance: customer.walletBalance });
+        return ApiResponse.success(res, "Payment successful", { balance: customer.walletBalance });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 
@@ -180,9 +181,9 @@ router.get('/balance', authenticateToken, async (req, res) => {
             }
         });
 
-        res.json({ totalPaid, totalPending });
+        return ApiResponse.success(res, "Balance fetched", { totalPaid, totalPending });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return ApiResponse.error(res, err.message, 500);
     }
 });
 

@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from '../api/config';
 
 const Login = () => {
-    const [form, setForm] = useState({ email: '', password: '', role: 'customer' });
+    const [form, setForm] = useState({ identifier: '', password: '', role: 'customer' });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -16,11 +16,13 @@ const Login = () => {
         setLoading(true);
         try {
             const res = await axios.post(`${API_BASE_URL}/login`, form);
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
+            const { token, user } = res.data.data;
 
-            toast.success("Welcome back!");
-            if (res.data.user.role === 'vendor') {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            toast.success(res.data.message || "Welcome back!");
+            if (user.role === 'vendor') {
                 navigate('/vendor');
             } else {
                 navigate('/customer');
@@ -55,11 +57,11 @@ const Login = () => {
                                 <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                             </div>
                             <input
-                                type="email"
-                                placeholder="Email Address"
+                                type="text"
+                                placeholder="Email or Name"
                                 className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-sm"
-                                value={form.email}
-                                onChange={e => setForm({ ...form, email: e.target.value })}
+                                value={form.identifier}
+                                onChange={e => setForm({ ...form, identifier: e.target.value })}
                                 required
                             />
                         </div>
@@ -104,9 +106,12 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="mt-10 text-center">
+                <div className="mt-10 text-center space-y-4">
                     <p className="text-slate-500 text-xs font-bold">
                         Don't have an account? <Link to="/register" className="text-blue-400 hover:text-blue-300 transition-colors">Sign Up</Link>
+                    </p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                        <Link to="/forgot-password" title="Recover Password" override="forgot-password-link" className="hover:text-blue-400 transition-colors">Forgot your password?</Link>
                     </p>
                 </div>
             </div>

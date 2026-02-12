@@ -7,7 +7,10 @@ import {
     ArrowRight,
     Plus,
     Printer,
-    Download
+    Download,
+    Settings,
+    TriangleAlert,
+    Bell
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -18,6 +21,7 @@ import AnalyticsChart from '../components/vendor/AnalyticsChart';
 import SubscriptionItem from '../components/customer/SubscriptionItem';
 import CustomerTransactions from '../components/customer/CustomerTransactions';
 import Modal from '../components/shared/Modal';
+import ProfileModal from '../components/shared/ProfileModal';
 import { API_BASE_URL } from '../api/config';
 
 const CustomerDashboard = () => {
@@ -34,6 +38,8 @@ const CustomerDashboard = () => {
     const [showTopup, setShowTopup] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedReceipt, setSelectedReceipt] = useState(null);
+    const [showProfile, setShowProfile] = useState(false);
+    const [profileData, setProfileData] = useState(null);
     const navigate = useNavigate();
 
     const token = localStorage.getItem('token');
@@ -43,7 +49,7 @@ const CustomerDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const vRes = await axios.get(`${API_BASE_URL}/vendors`, config);
-            setVendors(vRes.data);
+            setVendors(vRes.data.data);
         } catch (err) {
             console.error("Market Fetch Error:", err);
         }
@@ -53,7 +59,7 @@ const CustomerDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.get(`${API_BASE_URL}/transactions`, config);
-            setTransactions(res.data);
+            setTransactions(res.data.data);
         } catch (err) {
             console.error("Transactions Fetch Error:", err);
         }
@@ -63,7 +69,7 @@ const CustomerDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.get(`${API_BASE_URL}/subscriptions`, config);
-            setSubscriptions(res.data);
+            setSubscriptions(res.data.data);
         } catch (err) {
             console.error("Subscriptions Fetch Error:", err);
         }
@@ -74,7 +80,8 @@ const CustomerDashboard = () => {
             setLoading(true);
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const profileRes = await axios.get(`${API_BASE_URL}/customer/me`, config);
-            setWalletBalance(parseFloat(profileRes.data.walletBalance) || 0);
+            setWalletBalance(parseFloat(profileRes.data.data.walletBalance) || 0);
+            setProfileData(profileRes.data.data);
         } catch (err) {
             console.error("Profile Fetch Error:", err);
         } finally {
@@ -186,7 +193,7 @@ const CustomerDashboard = () => {
             toast.success(status === 'delivered' ? "Delivery verified" : "Issue reported");
             fetchTransactions();
             if (status === 'delivered') {
-                setSelectedReceipt(res.data);
+                setSelectedReceipt(res.data.data);
             }
         } catch (err) {
             toast.error("Action failed");
@@ -264,6 +271,13 @@ const CustomerDashboard = () => {
                 user={user}
                 role="customer"
                 onLogout={handleLogout}
+                onSettings={() => setShowProfile(true)}
+                extra={walletBalance < 100 && (
+                    <div className="hidden md:flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-900/30 animate-pulse">
+                        <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" />
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Low Balance: ₹{walletBalance}</span>
+                    </div>
+                )}
             />
 
             <main className="relative z-10 flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-20">
@@ -462,7 +476,6 @@ const CustomerDashboard = () => {
             >
                 {selectedReceipt && (
                     <div className="space-y-8 animate-fadeIn">
-                        {/* Receipt Header */}
                         <div className="text-center space-y-2 border-b-2 border-dashed border-slate-100 dark:border-slate-800 pb-8">
                             <div className="w-16 h-16 bg-slate-900 dark:bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3 transition-transform hover:rotate-0 duration-500">
                                 <Plus size={32} className="text-white" />
@@ -471,7 +484,6 @@ const CustomerDashboard = () => {
                             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">Verified Transaction</p>
                         </div>
 
-                        {/* Receipt Body */}
                         <div className="space-y-6">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -510,7 +522,6 @@ const CustomerDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Verification Ribbon */}
                         <div className="py-4 px-6 bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
@@ -519,7 +530,6 @@ const CustomerDashboard = () => {
                             <span className="text-[8px] font-black text-emerald-600/50 dark:text-emerald-400/50 uppercase tracking-[0.2em]">SECURE TRANSACTION</span>
                         </div>
 
-                        {/* Actions */}
                         <div className="grid grid-cols-2 gap-4 pt-4">
                             <button
                                 onClick={() => window.print()}
@@ -548,6 +558,17 @@ const CustomerDashboard = () => {
                     <p className="text-[9px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-widest mt-1">© 2026 DairyHub. All Rights Reserved.</p>
                 </div>
             </footer>
+
+            <ProfileModal
+                isOpen={showProfile}
+                onClose={() => setShowProfile(false)}
+                user={profileData}
+                role="customer"
+                onUpdate={(updatedData) => {
+                    setProfileData(prev => ({ ...prev, ...updatedData }));
+                    localStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
+                }}
+            />
         </div>
     );
 };
