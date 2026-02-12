@@ -1,22 +1,25 @@
 # MilkApp - Daily Milk Delivery System
 
-MilkApp is a comprehensive platform designed to streamline the connection between milk vendors and customers. It supports daily subscriptions, one-time purchases, wallet management, and delivery tracking.
+MilkApp is a comprehensive v4.0 platform designed to streamline the connection between milk vendors and customers. It supports daily subscriptions, one-time purchases, wallet management, digital receipts, and delivery tracking.
 
 ## 🚀 Features
 
 ### For Customers
-- **Dashboard**: Overview of wallet balance, active subscriptions, and recent transactions.
-- **Wallet**: Secure top-up system to pay for milk purchases.
-- **Subscriptions**: Subscribe to daily milk delivery (7 days, 1 month, or 3 months) with fixed rates.
-- **One-time Purchase**: Buy milk directly from available vendors.
-- **Delivery Tracking**: Track and verify the delivery status of your orders.
+- **Dashboard**: Real-time overview of wallet balance, active subscriptions, and monthly spending charts.
+- **Wallet**: Secure top-up system (up to ₹50,000) for seamless automated or manual payments.
+- **Subscriptions**: Subscribe to daily deliveries (7 days, 1 month, or 3 months) with fixed rates.
+- **Manual Payments**: Pay for pending subscription orders directly from the dashboard.
+- **Subscription Management**: Flexible control to pause, resume, or cancel delivery connections.
+- **One-time Purchase**: Buy milk directly from available vendors using wallet balance.
+- **Delivery Verification**: Verify delivery status to unlock digital receipts and track order history.
+- **Digital Receipts**: View, print, or export detailed receipts for all verified transactions.
 
 ### For Vendors
 - **Inventory Management**: Update milk stock levels and set daily rates.
-- **Subscription Processing**: Process daily subscription orders with a single click.
-- **Delivery Management**: Update delivery status for all orders.
-- **Reports & Analytics**: View monthly revenue and volume reports with visual charts.
-- **Transaction History**: Monitor all sales and payments.
+- **Subscription Processing**: Process daily subscription orders for all active customers with a single click.
+- **Delivery Management**: Update delivery status (Delivered/Failed) for all daily orders.
+- **Reports & Analytics**: Comprehensive monthly revenue and volume reports with visual data charts.
+- **Transaction History**: Monitor sales and payments through a paginated ledger stream.
 
 ## 🛠️ Tech Stack
 
@@ -38,15 +41,23 @@ MilkApp is a comprehensive platform designed to streamline the connection betwee
 
 ```text
 milkapp/
-├── backend/          # Node.js Express server
-│   ├── models/       # Sequelize models
-│   ├── index.js      # Main server entry point
-│   └── .env          # Backend environment variables
-├── frontend/         # React application
-│   ├── src/          # React components and pages
-│   ├── public/       # Static assets
-│   └── .env          # Frontend configuration
-└── README.md         # Project documentation
+├── backend/                # Node.js Express server
+│   ├── config/            # Database and app configuration
+│   ├── models/            # Sequelize ORM models
+│   ├── routes/            # API route handlers
+│   ├── middleware/        # Custom Express middlewares
+│   ├── validations/       # Request validation logic
+│   ├── migrations/        # Sequelize database migrations
+│   ├── index.js           # Main server entry point
+│   └── .env               # Backend environment variables
+├── frontend/               # React application
+│   ├── src/               # React components, pages, and logic
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Page-level components
+│   │   └── api/           # API configuration and service calls
+│   ├── public/            # Static assets
+│   └── .env               # Frontend configuration
+└── README.md               # Project documentation
 ```
 
 ## ⚙️ Setup Instructions
@@ -112,7 +123,7 @@ Create a PostgreSQL database named `yourdbname`.
 | DB_USERNAME | PostgreSQL username | `postgres` |
 | DB_PASSWORD | PostgreSQL password | `postgres` |
 | DB_HOST | PostgreSQL host | `localhost` |
-| DB_PORT | PostgreSQL port | `5432` |
+| DB_PORT | PostgreSQL port | `5433` |
 | DB_DIALECT | Database dialect | `postgres` |
 
 ### Frontend (`/frontend/.env`)

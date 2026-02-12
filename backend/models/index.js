@@ -1,43 +1,31 @@
-'use strict';
+const sequelize = require('../config/database');
+const Customer = require('./Customer');
+const Vendor = require('./Vendor');
+const Transaction = require('./Transaction');
+const Subscription = require('./Subscription');
+const InventoryHistory = require('./InventoryHistory');
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
-const db = {};
+// Associations
+Customer.hasMany(Transaction, { foreignKey: 'customerId' });
+Transaction.belongsTo(Customer, { foreignKey: 'customerId' });
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+Vendor.hasMany(Transaction, { foreignKey: 'vendorId' });
+Transaction.belongsTo(Vendor, { foreignKey: 'vendorId' });
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+Customer.hasMany(Subscription, { foreignKey: 'customerId' });
+Subscription.belongsTo(Customer, { foreignKey: 'customerId' });
 
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
+Vendor.hasMany(Subscription, { foreignKey: 'vendorId' });
+Subscription.belongsTo(Vendor, { foreignKey: 'vendorId' });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+Vendor.hasMany(InventoryHistory, { foreignKey: 'vendorId' });
+InventoryHistory.belongsTo(Vendor, { foreignKey: 'vendorId' });
 
-module.exports = db;
+module.exports = {
+  sequelize,
+  Customer,
+  Vendor,
+  Transaction,
+  Subscription,
+  InventoryHistory
+};
