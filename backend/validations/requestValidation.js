@@ -30,18 +30,28 @@ class Validation {
     }
 
     static vendorUpdate(req, res, next) {
-        const { rate, addMilk } = req.body;
+        const { rate, addMilk, removeMilk } = req.body;
         if (rate !== undefined && (rate < 20 || rate > 200)) return res.status(400).json({ error: "Milk rate must be between ₹20 and ₹200 per liter" });
         if (addMilk !== undefined) {
             const milkToAdd = parseFloat(addMilk);
             if (isNaN(milkToAdd) || milkToAdd <= 0) return res.status(400).json({ error: "Add amount must be greater than 0" });
+        }
+        if (removeMilk !== undefined) {
+            const milkToRemove = parseFloat(removeMilk);
+            if (isNaN(milkToRemove) || milkToRemove <= 0) return res.status(400).json({ error: "Remove amount must be greater than 0" });
         }
         next();
     }
 
     static topup(req, res, next) {
         const { amount } = req.body;
-        if (!amount || amount < 10 || amount > 50000) return res.status(400).json({ error: "Topup amount must be between ₹10 and ₹50,000" });
+        if (!amount || amount < 10 || amount > 50000) return res.status(400).json({ error: "Amount must be between ₹10 and ₹50,000" });
+        next();
+    }
+
+    static withdraw(req, res, next) {
+        const { amount } = req.body;
+        if (!amount || amount < 10) return res.status(400).json({ error: "Withdrawal amount must be at least ₹10" });
         next();
     }
 

@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import {
-    Milk,
-    Loader2,
-    TrendingUp,
-    Users,
-    Zap,
-    Palmtree,
-    Power
-} from 'lucide-react';
+import { Milk, Loader2, TrendingUp, Users, Zap, Palmtree, Power } from 'lucide-react';
 
 import Header from '../components/shared/Header';
 import StatsCard from '../components/shared/StatsCard';
@@ -100,17 +92,20 @@ const VendorDashboard = () => {
                     const r = parseFloat(newRate);
                     if (!r || r < 20 || r > 200) return toast.error("Rate must be between ₹20 and ₹200");
                 }
-                if (type === 'stock') {
+                if (type === 'stock' || type === 'remove_stock') {
                     const s = parseFloat(addStock);
                     if (!s || s <= 0) return toast.error("Please enter a valid amount");
-                    if (stats.availableMilk + s > 1000) {
+                    if (type === 'stock' && stats.availableMilk + s > 1000) {
                         return toast.error(`Cannot exceed total stock of 1000L. Current: ${stats.availableMilk}L`);
+                    }
+                    if (type === 'remove_stock' && stats.availableMilk < s) {
+                        return toast.error(`Cannot remove more than current stock. Current: ${stats.availableMilk}L`);
                     }
                 }
 
-                const payload = type === 'rate' ? { rate: newRate } : { addMilk: addStock };
+                const payload = type === 'rate' ? { rate: newRate } : (type === 'remove_stock' ? { removeMilk: addStock } : { addMilk: addStock });
                 await axios.put(`${API_BASE_URL}/vendor/update`, payload, config);
-                toast.success(type === 'rate' ? "Rate Updated!" : "Stock Added!");
+                toast.success(type === 'rate' ? "Rate Updated!" : (type === 'remove_stock' ? "Stock Removed!" : "Stock Added!"));
                 if (type === 'stock') setAddStock('');
             }
             setRefreshKey(old => old + 1);
@@ -146,7 +141,6 @@ const VendorDashboard = () => {
         navigate('/');
     };
 
-    const totalQty = sales.reduce((sum, s) => sum + (parseFloat(s.quantity) || 0), 0);
     const totalRev = sales.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
 
     const reportData = Object.entries(monthlyReports)

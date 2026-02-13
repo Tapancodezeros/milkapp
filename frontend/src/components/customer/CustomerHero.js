@@ -2,7 +2,7 @@ import React from 'react';
 import { Wallet, Plus, Activity, TrendingUp } from 'lucide-react';
 import StatsCard from '../shared/StatsCard';
 
-const CustomerHero = ({ walletBalance, totalSpent, activeSubs, onTopupClick }) => {
+const CustomerHero = ({ walletBalance, totalSpent, activeSubs, onTopupClick, onWithdrawClick }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 transition-colors duration-500">
             <div className="bg-gradient-to-br from-[#4f46e5] via-[#7c3aed] to-[#9333ea] p-8 rounded-[2.5rem] shadow-2xl shadow-indigo-200/50 dark:shadow-indigo-500/10 relative overflow-hidden group col-span-1 md:col-span-2 min-h-[240px] flex flex-col justify-between border border-white/10">
@@ -17,15 +17,26 @@ const CustomerHero = ({ walletBalance, totalSpent, activeSubs, onTopupClick }) =
                         </div>
                         <p className="text-white/70 text-[11px] font-black uppercase tracking-[0.3em] mb-1">Wallet Balance</p>
                     </div>
-                    <button
-                        onClick={onTopupClick}
-                        className="bg-white/10 hover:bg-white text-white hover:text-indigo-600 p-3 rounded-2xl backdrop-blur-md border border-white/20 transition-all active:scale-95 group/btn overflow-hidden relative shadow-xl"
-                    >
-                        <div className="relative z-10 flex items-center gap-2 font-bold text-sm">
-                            <Plus size={20} className="group-hover/btn:rotate-90 transition-transform duration-300" />
-                            <span className="max-w-0 group-hover/btn:max-w-xs transition-all duration-300 overflow-hidden whitespace-nowrap">Top Up</span>
-                        </div>
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onWithdrawClick}
+                            className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-2xl backdrop-blur-md border border-white/20 transition-all active:scale-95 group/btn overflow-hidden relative shadow-xl"
+                            title="Withdraw"
+                        >
+                            <TrendingUp size={20} className="rotate-180" />
+                        </button>
+                        <button
+                            onClick={onTopupClick}
+                            className="bg-white/10 hover:bg-white text-white hover:text-indigo-600 p-3 rounded-2xl backdrop-blur-md border border-white/20 transition-all active:scale-95 group/btn overflow-hidden relative shadow-xl"
+                        >
+                            <div className="relative z-10 flex items-center gap-2 font-bold text-sm">
+                                <Plus size={20} className="group-hover/btn:rotate-90 transition-transform duration-300" />
+                                <span className="max-w-0 group-hover/btn:max-w-xs transition-all duration-300 overflow-hidden whitespace-nowrap">Top Up</span>
+                            </div>
+                        </button>
+                    </div>
+
+
                 </div>
 
                 <div className="relative z-10 mt-auto">

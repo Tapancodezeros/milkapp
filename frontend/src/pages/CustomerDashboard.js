@@ -8,9 +8,7 @@ import {
     Plus,
     Printer,
     Download,
-    Settings,
-    TriangleAlert,
-    Bell
+    TriangleAlert
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -36,6 +34,7 @@ const CustomerDashboard = () => {
     const [form, setForm] = useState({ quantity: '', duration: '7_days' });
     const [topupAmount, setTopupAmount] = useState('');
     const [showTopup, setShowTopup] = useState(false);
+    const [showWithdraw, setShowWithdraw] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [showProfile, setShowProfile] = useState(false);
@@ -125,6 +124,31 @@ const CustomerDashboard = () => {
         }
     };
 
+    const handleWithdraw = async (e) => {
+        e.preventDefault();
+        const amt = parseFloat(topupAmount);
+        if (!amt || amt < 10) {
+            return toast.error("Withdrawal must be at least ₹10");
+        }
+        if (amt > walletBalance) {
+            return toast.error("Insufficient balance");
+        }
+
+        setActionLoading(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            await axios.post(`${API_BASE_URL}/customer/withdraw`, { amount: amt }, config);
+            toast.success(`₹${amt} withdrawn from wallet`);
+            setShowWithdraw(false);
+            setTopupAmount('');
+            fetchProfile();
+        } catch (err) {
+            toast.error(err.response?.data?.error || "Withdrawal failed");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const handleSubmitAction = async (e) => {
         e.preventDefault();
         const qty = parseFloat(form.quantity);
@@ -135,7 +159,6 @@ const CustomerDashboard = () => {
         if (action === 'subscribe' && (qty < 0.1 || qty > 50)) {
             return toast.error("Daily quantity must be between 0.1L and 50L");
         }
-
         setActionLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -287,6 +310,7 @@ const CustomerDashboard = () => {
                     totalSpent={typeof totalSpent === 'number' ? totalSpent : 0}
                     activeSubs={activeSubCount}
                     onTopupClick={() => setShowTopup(true)}
+                    onWithdrawClick={() => setShowWithdraw(true)}
                 />
 
                 <Marketplace
@@ -400,6 +424,42 @@ const CustomerDashboard = () => {
             </Modal>
 
             <Modal
+                isOpen={showWithdraw}
+                onClose={() => setShowWithdraw(false)}
+                title="Withdraw Money"
+            >
+                <form onSubmit={handleWithdraw} className="space-y-10">
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-end px-2">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
+                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Available: ₹{walletBalance}</span>
+                        </div>
+                        <div className="relative group">
+                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-300 dark:text-slate-700 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors">₹</div>
+                            <input
+                                type="number"
+                                value={topupAmount}
+                                onChange={(e) => setTopupAmount(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-10 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-5xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
+                                placeholder="0.00"
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={actionLoading}
+                        className="w-full bg-slate-900 dark:bg-blue-600 group relative overflow-hidden text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
+                    >
+                        <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+                        <span className="relative z-10 flex items-center gap-3">
+                            {actionLoading ? <Loader2 className="animate-spin" /> : <>Withdraw Balance <ArrowRight size={18} strokeWidth={3} /></>}
+                        </span>
+                    </button>
+                </form>
+            </Modal>
+
+            <Modal
                 isOpen={!!selectedVendor}
                 onClose={() => { setSelectedVendor(null); setAction(null); }}
                 title={action === 'buy' ? 'Buy Milk' : 'Subscribe'}
@@ -450,6 +510,8 @@ const CustomerDashboard = () => {
                             </div>
                         </div>
                     )}
+
+
 
                     <div className="pt-4">
                         <div className="bg-slate-900/5 dark:bg-slate-800/20 p-6 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 mb-8 flex items-center justify-between">

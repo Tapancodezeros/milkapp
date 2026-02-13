@@ -19,6 +19,20 @@ class CustomerService {
         return { balance: customer.walletBalance };
     }
 
+    async withdraw(id, amount) {
+        const customer = await Customer.findByPk(id);
+        const balance = parseFloat(customer.walletBalance) || 0;
+        const withdrawAmount = parseFloat(amount);
+
+        if (balance < withdrawAmount) {
+            throw new Error(`Insufficient funds. Current balance: ₹${balance}`);
+        }
+
+        customer.walletBalance = balance - withdrawAmount;
+        await customer.save();
+        return { balance: customer.walletBalance };
+    }
+
     async updateProfile(id, data) {
         const { name, phone, password } = data;
         const customer = await Customer.findByPk(id);

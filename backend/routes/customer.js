@@ -36,4 +36,14 @@ router.put('/profile', authenticateToken, Validation.updateProfile, async (req, 
     }
 });
 
+router.post('/withdraw', authenticateToken, Validation.withdraw, async (req, res) => {
+    try {
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
+        const result = await CustomerService.withdraw(req.user.id, req.body.amount);
+        return ApiResponse.success(res, "Withdrawal successful", result);
+    } catch (err) {
+        return ApiResponse.error(res, err.message, 500);
+    }
+});
+
 module.exports = router;

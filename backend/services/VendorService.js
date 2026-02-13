@@ -24,7 +24,7 @@ class VendorService {
     }
 
     async updateVendor(id, data) {
-        const { rate, addMilk } = data;
+        const { rate, addMilk, removeMilk } = data;
         const vendor = await Vendor.findByPk(id);
 
         if (rate !== undefined) {
@@ -40,6 +40,19 @@ class VendorService {
 
             vendor.availableMilk = newTotal;
             await InventoryHistory.create({ vendorId: id, amount: milkToAdd });
+        }
+
+        if (removeMilk !== undefined) {
+            const milkToRemove = parseFloat(removeMilk);
+            const currentStock = parseFloat(vendor.availableMilk) || 0;
+
+            if (currentStock < milkToRemove) {
+                throw new Error(`Cannot remove ${milkToRemove}L. Current stock: ${currentStock}L`);
+            }
+
+            vendor.availableMilk = currentStock - milkToRemove;
+            // Log as negative amount
+            await InventoryHistory.create({ vendorId: id, amount: -milkToRemove });
         }
 
         await vendor.save();
