@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { Customer } = require('../models');
+const CustomerService = require('../services/CustomerService');
 const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
 const ApiResponse = require('../utils/apiResponse');
+const { UserRole } = require('../utils/constants');
 
 router.get('/me', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return ApiResponse.error(res, "Not a customer", 403);
-        const customer = await Customer.findByPk(req.user.id, { attributes: ['id', 'name', 'email', 'phone', 'walletBalance'] });
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
+        const customer = await CustomerService.getProfile(req.user.id);
         return ApiResponse.success(res, "Profile fetched", customer);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
@@ -17,19 +18,9 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 router.post('/topup', authenticateToken, Validation.topup, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return ApiResponse.error(res, "Not a customer", 403);
-        const { amount } = req.body;
-
-        const customer = await Customer.findByPk(req.user.id);
-        const newBalance = (parseFloat(customer.walletBalance) || 0) + parseFloat(amount);
-
-        if (newBalance > 50000) {
-            return ApiResponse.error(res, `Wallet balance cannot exceed ₹50,000. Current: ₹${customer.walletBalance}, Max top-up allowed: ₹${50000 - customer.walletBalance}`, 400);
-        }
-
-        customer.walletBalance = newBalance;
-        await customer.save();
-        return ApiResponse.success(res, "Topup successful", { balance: customer.walletBalance });
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
+        const result = await CustomerService.topUp(req.user.id, req.body.amount);
+        return ApiResponse.success(res, "Topup successful", result);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }
@@ -37,24 +28,9 @@ router.post('/topup', authenticateToken, Validation.topup, async (req, res) => {
 
 router.put('/profile', authenticateToken, Validation.updateProfile, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return ApiResponse.error(res, "Not a customer", 403);
-        const { name, phone, password } = req.body;
-        const customer = await Customer.findByPk(req.user.id);
-
-        if (name) customer.name = name;
-        if (phone) customer.phone = phone;
-        if (password) {
-            const bcrypt = require('bcryptjs');
-            customer.password = await bcrypt.hash(password, 10);
-        }
-
-        await customer.save();
-        return ApiResponse.success(res, "Profile updated successfully", {
-            id: customer.id,
-            name: customer.name,
-            email: customer.email,
-            phone: customer.phone
-        });
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
+        const result = await CustomerService.updateProfile(req.user.id, req.body);
+        return ApiResponse.success(res, "Profile updated successfully", result);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }

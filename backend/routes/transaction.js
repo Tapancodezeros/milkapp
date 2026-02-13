@@ -1,46 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { Transaction, Customer, Vendor } = require('../models');
+const TransactionService = require('../services/TransactionService');
 const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
 const ApiResponse = require('../utils/apiResponse');
+const { UserRole } = require('../utils/constants');
 
 // POST /api/buy
 router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return ApiResponse.error(res, "Only customers can buy milk", 403);
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Only customers can buy milk", 403);
         const { vendorId, quantity } = req.body;
-
-        const vendor = await Vendor.findByPk(vendorId);
-        if (!vendor) return ApiResponse.error(res, "Vendor not found", 404);
-
-        if (vendor.availableMilk < quantity) {
-            return ApiResponse.error(res, `Not enough milk. Available: ${vendor.availableMilk} L`, 400);
-        }
-
-        const rate = vendor.rate;
-        const amount = quantity * rate;
-
-        const customer = await Customer.findByPk(req.user.id);
-        if (!customer || customer.walletBalance < amount) {
-            return ApiResponse.error(res, "Insufficient wallet balance. Please top up.", 400);
-        }
-
-        const transaction = await Transaction.create({
-            customerId: req.user.id,
-            vendorId,
-            quantity,
-            amount,
-            status: 'completed',
-            type: 'purchase'
-        });
-
-        customer.walletBalance -= amount;
-        await customer.save();
-
-        vendor.availableMilk -= quantity;
-        await vendor.save();
-
+        const transaction = await TransactionService.buy(req.user.id, vendorId, quantity);
         return ApiResponse.success(res, "Purchase successful", transaction, 201);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
@@ -50,37 +21,18 @@ router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
 // GET /api/transactions
 router.get('/transactions', authenticateToken, async (req, res) => {
     try {
-        const { role, id } = req.user;
         const { page = 1, limit = 10, paginate = 'false' } = req.query;
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            paginate: paginate === 'true'
+        };
 
-        const where = role === 'vendor' ? { vendorId: id } : { customerId: id };
-        const include = role === 'vendor'
-            ? [{ model: Customer, attributes: ['name', 'phone'] }]
-            : [{ model: Vendor, attributes: ['name', 'phone'] }];
+        const transactions = await TransactionService.getTransactions(req.user.id, req.user.role, options);
 
-        if (paginate === 'true') {
-            const offset = (parseInt(page) - 1) * parseInt(limit);
-            const { count, rows } = await Transaction.findAndCountAll({
-                where,
-                include,
-                order: [['createdAt', 'DESC']],
-                limit: parseInt(limit),
-                offset: offset
-            });
-
-            return ApiResponse.success(res, "Paginated transactions fetched", {
-                data: rows,
-                total: count,
-                page: parseInt(page),
-                totalPages: Math.ceil(count / parseInt(limit))
-            });
+        if (options.paginate) {
+            return ApiResponse.success(res, "Paginated transactions fetched", transactions);
         }
-
-        const transactions = await Transaction.findAll({
-            where,
-            include,
-            order: [['createdAt', 'DESC']]
-        });
 
         return ApiResponse.success(res, "Transactions fetched", transactions);
     } catch (err) {
@@ -91,22 +43,8 @@ router.get('/transactions', authenticateToken, async (req, res) => {
 // PUT /api/transactions/:id/verify
 router.put('/transactions/:id/verify', authenticateToken, async (req, res) => {
     try {
-        const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
-        if (req.user.id !== transaction.customerId) return ApiResponse.error(res, "Unauthorized", 403);
-
-        const { status } = req.body;
-        if (!['delivered', 'not_delivered'].includes(status)) {
-            return ApiResponse.error(res, "Invalid status. Use 'delivered' or 'not_delivered'.", 400);
-        }
-
-        transaction.deliveryStatus = status;
-        await transaction.save();
-
-        const updatedTransaction = await Transaction.findByPk(req.params.id, {
-            include: [{ model: Vendor, attributes: ['name', 'phone'] }]
-        });
-        return ApiResponse.success(res, "Delivery status verified", updatedTransaction);
+        const transaction = await TransactionService.verifyDelivery(req.params.id, req.body.status, req.user.id);
+        return ApiResponse.success(res, "Delivery status verified", transaction);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }
@@ -115,19 +53,8 @@ router.put('/transactions/:id/verify', authenticateToken, async (req, res) => {
 // PUT /api/transactions/:id/delivery
 router.put('/transactions/:id/delivery', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') return ApiResponse.error(res, "Only vendors can update delivery", 403);
-
-        const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
-        if (transaction.vendorId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
-
-        const { status } = req.body;
-        if (!['delivered', 'not_delivered'].includes(status)) {
-            return ApiResponse.error(res, "Invalid status. Use 'delivered' or 'not_delivered'.", 400);
-        }
-
-        transaction.deliveryStatus = status;
-        await transaction.save();
+        if (req.user.role !== UserRole.VENDOR) return ApiResponse.error(res, "Only vendors can update delivery", 403);
+        const transaction = await TransactionService.updateDelivery(req.params.id, req.body.status, req.user.id);
         return ApiResponse.success(res, "Delivery status updated", transaction);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
@@ -137,25 +64,9 @@ router.put('/transactions/:id/delivery', authenticateToken, async (req, res) => 
 // PUT /api/transactions/:id/pay
 router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'customer') return ApiResponse.error(res, "Only customers can pay", 403);
-
-        const transaction = await Transaction.findByPk(req.params.id);
-        if (!transaction) return ApiResponse.error(res, "Transaction not found", 404);
-        if (transaction.customerId !== req.user.id) return ApiResponse.error(res, "Unauthorized", 403);
-        if (transaction.status !== 'pending') return ApiResponse.error(res, "Transaction is not pending", 400);
-
-        const customer = await Customer.findByPk(req.user.id);
-        if (customer.walletBalance < transaction.amount) {
-            return ApiResponse.error(res, "Insufficient wallet balance. Please top up.", 400);
-        }
-
-        customer.walletBalance -= transaction.amount;
-        await customer.save();
-
-        transaction.status = 'completed';
-        await transaction.save();
-
-        return ApiResponse.success(res, "Payment successful", { balance: customer.walletBalance });
+        if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Only customers can pay", 403);
+        const result = await TransactionService.pay(req.params.id, req.user.id);
+        return ApiResponse.success(res, "Payment successful", result);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }
@@ -164,24 +75,8 @@ router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
 // GET /api/balance
 router.get('/balance', authenticateToken, async (req, res) => {
     try {
-        const { role, id } = req.user;
-        const where = role === 'vendor' ? { vendorId: id } : { customerId: id };
-
-        const transactions = await Transaction.findAll({ where });
-
-        let totalPaid = 0;
-        let totalPending = 0;
-
-        transactions.forEach(t => {
-            const amt = parseFloat(t.amount) || 0;
-            if (t.status === 'completed') {
-                totalPaid += amt;
-            } else if (t.status === 'pending') {
-                totalPending += amt;
-            }
-        });
-
-        return ApiResponse.success(res, "Balance fetched", { totalPaid, totalPending });
+        const balance = await TransactionService.getBalance(req.user.id, req.user.role);
+        return ApiResponse.success(res, "Balance fetched", balance);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }

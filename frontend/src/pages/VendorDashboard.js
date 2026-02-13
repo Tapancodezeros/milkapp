@@ -37,8 +37,8 @@ const VendorDashboard = () => {
     const [showProfile, setShowProfile] = useState(false);
     const navigate = useNavigate();
 
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
+    const token = sessionStorage.getItem('token');
+    const user = JSON.parse(sessionStorage.getItem('user'));
 
     const fetchGlobalData = React.useCallback(async () => {
         try {
@@ -142,7 +142,7 @@ const VendorDashboard = () => {
     };
 
     const handleLogout = () => {
-        localStorage.clear();
+        sessionStorage.clear();
         navigate('/');
     };
 
@@ -248,7 +248,7 @@ const VendorDashboard = () => {
                 role="vendor"
                 onUpdate={(updatedData) => {
                     setStats(prev => ({ ...prev, ...updatedData }));
-                    localStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
+                    sessionStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
                 }}
             />
         </div>

@@ -20,8 +20,8 @@ const Register = () => {
         if (form.password.length < 6) {
             return toast.error("Password must be at least 6 characters");
         }
-        if (!form.email.includes('@')) {
-            return toast.error("Invalid email address");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            return toast.error("Invalid email address format");
         }
 
         setLoading(true);

@@ -17,7 +17,7 @@ const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const endpoint = role === 'vendor' ? `${API_BASE_URL}/vendor/profile` : `${API_BASE_URL}/customer/profile`;
             const res = await axios.put(endpoint, form, {
                 headers: { Authorization: `Bearer ${token}` }

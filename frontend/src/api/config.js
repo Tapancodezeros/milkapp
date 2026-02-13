@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // Automatically detect the host to support both localhost and network access
 const getApiBaseUrl = () => {
     // If we're in a browser, use the current hostname
@@ -10,3 +12,24 @@ const getApiBaseUrl = () => {
 };
 
 export const API_BASE_URL = getApiBaseUrl();
+
+// Configure global axios
+axios.defaults.baseURL = API_BASE_URL;
+
+// Global Response interceptor for auth errors
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && [401, 403].includes(error.response.status)) {
+            // Only redirect if not already on login or reset pages
+            const path = window.location.pathname;
+            if (path !== '/' && path !== '/register' && path !== '/forgot-password' && path !== '/reset-password') {
+                sessionStorage.clear();
+                window.location.href = '/';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default axios;

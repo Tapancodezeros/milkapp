@@ -10,8 +10,8 @@ import VendorDashboard from './pages/VendorDashboard';
 import './App.css';
 
 const PrivateRoute = ({ children, role }) => {
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user'));
+  const token = sessionStorage.getItem('token');
+  const user = JSON.parse(sessionStorage.getItem('user'));
 
   if (!token) return <Navigate to="/" />;
   if (role && user.role !== role) return <Navigate to="/" />; // Redirect if unauthorized role

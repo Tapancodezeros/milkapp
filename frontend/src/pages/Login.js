@@ -18,8 +18,8 @@ const Login = () => {
             const res = await axios.post(`${API_BASE_URL}/login`, form);
             const { token, user } = res.data.data;
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('token', token);
+            sessionStorage.setItem('user', JSON.stringify(user));
 
             toast.success(res.data.message || "Welcome back!");
             if (user.role === 'vendor') {
