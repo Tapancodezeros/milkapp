@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
 const { sequelize } = require('./models');
 const routes = require('./routes');
 
@@ -34,6 +35,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// --- SWAGGER ---
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(require('./swagger/openapi.js'), {
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
+
 // --- ROUTES ---
 app.use('/api', routes);
 
@@ -47,6 +53,7 @@ async function startServer() {
       console.log(`🚀 Server Status:`);
       console.log(`   🏠 Local:   http://localhost:${PORT}`);
       console.log(`   🌐 Network: http://192.168.97.100:${PORT}`);
+      console.log(`   📚 Swagger: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error('❌ DB Connection Error:', error.message);

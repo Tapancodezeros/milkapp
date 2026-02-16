@@ -20,14 +20,19 @@ import {
     Pencil,
     Save,
     KeyRound,
-    ExternalLink
+    ExternalLink,
+    DollarSign,
+    Filter
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../api/config';
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState('customers');
+    const [activeTab, setActiveTab] = useState('overview');
+    const [overviewStats, setOverviewStats] = useState(null);
+    const [overviewFilter, setOverviewFilter] = useState('all');
+    const [transactionFilter, setTransactionFilter] = useState('all');
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -37,6 +42,8 @@ const AdminDashboard = () => {
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [editModal, setEditModal] = useState({ isOpen: false, data: null, role: '' });
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newUserData, setNewUserData] = useState({ name: '', email: '', phone: '', password: '', role: 'customer', rate: 60 });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -47,10 +54,22 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const token = sessionStorage.getItem('token');
-            const res = await axios.get(`${API_BASE_URL}/admin/${tab}`, {
+            const url = tab === 'overview' ? 'overview' : tab;
+            const params = {};
+            if (tab === 'overview') params.period = overviewFilter;
+            if (tab === 'transactions') params.status = transactionFilter;
+
+            const res = await axios.get(`${API_BASE_URL}/admin/${url}`, {
+                params,
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setData(res.data.data);
+
+            if (tab === 'overview') {
+                setOverviewStats(res.data.data);
+                setData([]);
+            } else {
+                setData(res.data.data);
+            }
         } catch (err) {
             toast.error("Failed to fetch data: " + (err.response?.data?.error || err.message));
             if (err.response?.status === 401 || err.response?.status === 403) {
@@ -63,7 +82,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchItems(activeTab);
-    }, [activeTab]);
+    }, [activeTab, overviewFilter, transactionFilter]);
 
     const handleUpdateUser = async (e) => {
         e.preventDefault();
@@ -113,6 +132,24 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleAddUser = async (e) => {
+        e.preventDefault();
+        try {
+            const token = sessionStorage.getItem('token');
+            await axios.post(`${API_BASE_URL}/admin/user/create`, newUserData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("User created successfully");
+            setIsAddModalOpen(false);
+            setNewUserData({ name: '', email: '', phone: '', password: '', role: 'customer', rate: 60 });
+            if (activeTab === newUserData.role + 's') { // 'customer' -> 'customers', 'vendor' -> 'vendors'
+                fetchItems(activeTab);
+            }
+        } catch (err) {
+            toast.error("Failed to create user: " + (err.response?.data?.error || err.message));
+        }
+    };
+
     const handleLogout = () => {
         sessionStorage.clear();
         navigate('/');
@@ -130,6 +167,7 @@ const AdminDashboard = () => {
     });
 
     const MenuItems = [
+        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'customers', label: 'Customers', icon: Users },
         { id: 'vendors', label: 'Vendors', icon: Briefcase },
         { id: 'transactions', label: 'Transactions', icon: CreditCard },
@@ -209,9 +247,15 @@ const AdminDashboard = () => {
 
                     <div className="flex items-center gap-3 ml-4">
                         <button
-                            onClick={() => setIsDarkMode(!isDarkMode)}
-                            className={`p-3 rounded-2xl transition-all ${isDarkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-blue-600 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
                         >
+                            <UserPlus size={16} />
+                            <span className="hidden sm:inline">Add User</span>
+                        </button>
+                        <button
+                            onClick={() => setIsDarkMode(!isDarkMode)}
+                            className={`p-3 rounded-2xl transition-all ${isDarkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}                      >
                             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
                     </div>
@@ -220,14 +264,134 @@ const AdminDashboard = () => {
                 {/* Content */}
                 <div className="p-8 overflow-auto">
                     <div className="mb-8">
-                        <h2 className={`text-2xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activeTab}</h2>
-                        <p className="text-slate-500 text-sm mt-1">Manage and monitor all system {activeTab}</p>
+                        <h2 className={`text-2xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activeTab === 'overview' ? 'Dashboard Overview' : activeTab}</h2>
+                        <p className="text-slate-500 text-sm mt-1">{activeTab === 'overview' ? 'View key metrics and system performance' : `Manage and monitor all system ${activeTab}`}</p>
                     </div>
 
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-96 gap-4">
                             <Loader2 className="animate-spin text-blue-500" size={48} />
                             <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Loading data...</p>
+                        </div>
+                    ) : activeTab === 'overview' && overviewStats ? (
+                        <div className="space-y-8">
+                            {/* Filter and Grid */}
+                            <div>
+                                <div className="flex items-center justify-end mb-6">
+                                    <div className={`inline-flex p-1.5 rounded-2xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                        {['all', 'this_month', 'last_month', 'this_week'].map((period) => (
+                                            <button
+                                                key={period}
+                                                onClick={() => setOverviewFilter(period)}
+                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${overviewFilter === period ? (isDarkMode ? 'bg-slate-700 text-white shadow-lg' : 'bg-white text-slate-900 shadow-lg') : 'text-slate-500 hover:text-slate-700'}`}
+                                            >
+                                                {period === 'all' && <Filter size={14} />}
+                                                {period.replace('_', ' ')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div className={`p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200 shadow-xl'}`}>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
+                                                <Users size={24} />
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Customers</div>
+                                        </div>
+                                        <div className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{overviewStats.totalCustomers}</div>
+                                    </div>
+                                    <div className={`p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200 shadow-xl'}`}>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-500">
+                                                <Briefcase size={24} />
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Vendors</div>
+                                        </div>
+                                        <div className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{overviewStats.totalVendors}</div>
+                                    </div>
+                                    <div className={`p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200 shadow-xl'}`}>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
+                                                <DollarSign size={24} />
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Revenue</div>
+                                        </div>
+                                        <div className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>₹{overviewStats.totalRevenue?.toLocaleString()}</div>
+                                    </div>
+                                    <div className={`p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200 shadow-xl'}`}>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
+                                                <Calendar size={24} />
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Subs</div>
+                                        </div>
+                                        <div className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{overviewStats.activeSubscriptions}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Recent Transactions */}
+                            <div className={`rounded-[2.5rem] border overflow-hidden shadow-2xl transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200'}`}>
+                                <div className={`p-8 border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-500">
+                                            <CreditCard size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Recent Transactions</h3>
+                                            <p className="text-slate-500 text-xs mt-1 font-medium">Latest 5 financial activities</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className={`border-b ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50/50'}`}>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Date</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Customer</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Vendor</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Amount</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-slate-100'}`}>
+                                            {overviewStats.recentTransactions?.length > 0 ? (
+                                                overviewStats.recentTransactions.map((tx) => (
+                                                    <tr key={tx.id} className={`transition-all ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                                                        <td className={`px-8 py-5 text-sm font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                            {new Date(tx.date || tx.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className={`px-8 py-5 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                                            {tx.Customer?.name || 'Unknown'}
+                                                        </td>
+                                                        <td className={`px-8 py-5 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                                            {tx.Vendor?.name || 'Unknown'}
+                                                        </td>
+                                                        <td className={`px-8 py-5 text-sm font-bold text-right ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                                            ₹{tx.amount}
+                                                        </td>
+                                                        <td className="px-8 py-5 text-center">
+                                                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${tx.status === 'completed'
+                                                                ? 'bg-emerald-500/10 text-emerald-500'
+                                                                : 'bg-amber-500/10 text-amber-500'
+                                                                }`}>
+                                                                {tx.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="5" className="px-8 py-12 text-center text-slate-500 text-sm font-medium">
+                                                        No recent transactions found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     ) : filteredData.length === 0 ? (
                         <div className={`flex flex-col items-center justify-center h-96 rounded-[2.5rem] border border-dashed p-12 text-center ${isDarkMode ? 'bg-slate-900/50 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
@@ -239,6 +403,22 @@ const AdminDashboard = () => {
                         </div>
                     ) : (
                         <div className={`rounded-[2.5rem] border overflow-hidden shadow-2xl transition-all ${isDarkMode ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200'}`}>
+                            {activeTab === 'transactions' && (
+                                <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>All Transactions</h3>
+                                    <div className="flex gap-2">
+                                        {['all', 'completed', 'pending'].map(status => (
+                                            <button
+                                                key={status}
+                                                onClick={() => setTransactionFilter(status)}
+                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${transactionFilter === status ? (isDarkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white') : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                                            >
+                                                {status === 'completed' ? 'Paid' : status}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead>
@@ -319,12 +499,12 @@ const AdminDashboard = () => {
                                                         </td>
                                                         <td className="px-8 py-5 font-black text-blue-500">₹{item.amount}</td>
                                                         <td className="px-8 py-5">
-                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.paymentStatus === 'paid' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'
                                                                 }`}>
-                                                                {item.paymentStatus}
+                                                                {item.status}
                                                             </span>
                                                         </td>
-                                                        <td className="px-8 py-5 text-xs text-slate-500 font-bold">{new Date(item.createdAt).toLocaleDateString()}</td>
+                                                        <td className="px-8 py-5 text-xs text-slate-500 font-bold">{new Date(item.date || item.createdAt).toLocaleDateString()}</td>
                                                     </>
                                                 ) : (
                                                     <>
@@ -349,7 +529,6 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* Edit Modal */}
             {editModal.isOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditModal({ isOpen: false, data: null, role: '' })}></div>
@@ -426,6 +605,123 @@ const AdminDashboard = () => {
                                     className="flex-1 bg-blue-600 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-500 shadow-xl shadow-blue-900/20 transition-all"
                                 >
                                     <Save size={16} /> Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Add User Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
+                    <div className={`relative w-full max-w-lg rounded-[2.5rem] border shadow-2xl p-8 animate-modal ${isDarkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className={`text-xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Add New User</h3>
+                                <p className="text-slate-500 text-xs mt-1">Create a new customer or vendor account</p>
+                            </div>
+                            <button
+                                onClick={() => setIsAddModalOpen(false)}
+                                className={`p-2 rounded-xl ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddUser} className="space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Role</label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewUserData({ ...newUserData, role: 'customer' })}
+                                            className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${newUserData.role === 'customer' ? 'bg-blue-600 text-white' : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}
+                                        >
+                                            Customer
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewUserData({ ...newUserData, role: 'vendor' })}
+                                            className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${newUserData.role === 'vendor' ? 'bg-blue-600 text-white' : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}
+                                        >
+                                            Vendor
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. John Doe"
+                                        className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        value={newUserData.name}
+                                        onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="e.g. john@example.com"
+                                        className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        value={newUserData.email}
+                                        onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Phone Number</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. 9876543210"
+                                        className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        value={newUserData.phone}
+                                        onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        placeholder="Min 6 characters"
+                                        className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        value={newUserData.password}
+                                        onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                                    />
+                                </div>
+                                {newUserData.role === 'vendor' && (
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Milk Rate (₹/L)</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                            value={newUserData.rate}
+                                            onChange={(e) => setNewUserData({ ...newUserData, rate: e.target.value })}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-900'}`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-blue-600 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-500 shadow-xl shadow-blue-900/20 transition-all"
+                                >
+                                    <UserPlus size={16} /> Create User
                                 </button>
                             </div>
                         </form>
