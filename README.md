@@ -21,6 +21,12 @@ MilkApp is a comprehensive v4.0 platform designed to streamline the connection b
 - **Reports & Analytics**: Comprehensive monthly revenue and volume reports with visual data charts.
 - **Transaction History**: Monitor sales and payments through a paginated ledger stream.
 
+### For Administrators
+- **Dashboard Overview**: Comprehensive view of system metrics (Total Customers, Vendors, Revenue, Active Subscriptions) with date-based filtering (All Time, This Month, Last Month, This Week).
+- **User Management**: Full control to Create, Update, and Delete Customers and Vendors. Includes password reset functionality.
+- **Transaction Oversight**: View recent transactions and filter full transaction history by status (Paid/Pending).
+- **Subscription Monitoring**: Track and monitor all active subscriptions in the system.
+
 ## 🛠️ Tech Stack
 
 ### Frontend
