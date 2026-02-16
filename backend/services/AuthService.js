@@ -26,6 +26,13 @@ class AuthService {
             throw new Error("Email already registered");
         }
 
+        await Model.create({
+            name,
+            phone,
+            email,
+            password: hashedPassword
+        });
+
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const welcomeLink = `${frontendUrl}/forgot-password`;
 

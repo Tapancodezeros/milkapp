@@ -58,6 +58,7 @@ const AdminDashboard = () => {
             const params = {};
             if (tab === 'overview') params.period = overviewFilter;
             if (tab === 'transactions') params.status = transactionFilter;
+            if (searchQuery) params.search = searchQuery;
 
             const res = await axios.get(`${API_BASE_URL}/admin/${url}`, {
                 params,
@@ -82,7 +83,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchItems(activeTab);
-    }, [activeTab, overviewFilter, transactionFilter]);
+    }, [activeTab, overviewFilter, transactionFilter, searchQuery]);
 
     const handleUpdateUser = async (e) => {
         e.preventDefault();
@@ -155,16 +156,7 @@ const AdminDashboard = () => {
         navigate('/');
     };
 
-    const filteredData = data.filter(item => {
-        const searchInput = searchQuery.toLowerCase();
-        if (activeTab === 'customers' || activeTab === 'vendors') {
-            return item.name?.toLowerCase().includes(searchInput) || item.email?.toLowerCase().includes(searchInput) || item.phone?.includes(searchInput);
-        }
-        if (activeTab === 'transactions' || activeTab === 'subscriptions') {
-            return item.Customer?.name?.toLowerCase().includes(searchInput) || item.Vendor?.name?.toLowerCase().includes(searchInput);
-        }
-        return true;
-    });
+    const filteredData = data;
 
     const MenuItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -571,11 +563,16 @@ const AdminDashboard = () => {
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Phone Number</label>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
+                                        maxLength={10}
+                                        inputMode="numeric"
                                         className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
                                         value={editModal.data.phone}
-                                        onChange={(e) => setEditModal({ ...editModal, data: { ...editModal.data, phone: e.target.value } })}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) setEditModal({ ...editModal, data: { ...editModal.data, phone: val } });
+                                        }}
                                     />
                                 </div>
                                 {editModal.role === 'vendor' && (
@@ -676,12 +673,17 @@ const AdminDashboard = () => {
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block px-1">Phone Number</label>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
-                                        placeholder="e.g. 9876543210"
+                                        placeholder="10 digits"
+                                        maxLength={10}
+                                        inputMode="numeric"
                                         className={`w-full border rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all ${isDarkMode ? 'bg-slate-800 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
                                         value={newUserData.phone}
-                                        onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) setNewUserData({ ...newUserData, phone: val });
+                                        }}
                                     />
                                 </div>
                                 <div>

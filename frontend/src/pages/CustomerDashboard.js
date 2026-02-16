@@ -5,6 +5,7 @@ import {
     Loader2,
     Calendar,
     ArrowRight,
+    ArrowLeft,
     Plus,
     Printer,
     Download,
@@ -24,6 +25,8 @@ import { API_BASE_URL } from '../api/config';
 
 const CustomerDashboard = () => {
     const [vendors, setVendors] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [transactions, setTransactions] = useState([]);
     const [subscriptions, setSubscriptions] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
@@ -46,13 +49,17 @@ const CustomerDashboard = () => {
 
     const fetchMarketData = React.useCallback(async () => {
         try {
-            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const config = {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { page: currentPage, limit: 3, search: searchQuery }
+            };
             const vRes = await axios.get(`${API_BASE_URL}/vendors`, config);
-            setVendors(vRes.data.data);
+            setVendors(vRes.data.data.vendors || []);
+            setTotalPages(vRes.data.data.pagination?.totalPages || 1);
         } catch (err) {
             console.error("Market Fetch Error:", err);
         }
-    }, [token]);
+    }, [token, currentPage, searchQuery]);
 
     const fetchTransactions = React.useCallback(async () => {
         try {
@@ -104,8 +111,8 @@ const CustomerDashboard = () => {
                     <button
                         onClick={() => { toast.dismiss(t.id); onConfirm(); }}
                         className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl ${type === 'danger'
-                                ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200 dark:shadow-none'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none'
+                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200 dark:shadow-none'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none'
                             }`}
                     >
                         Confirm
@@ -379,6 +386,29 @@ const CustomerDashboard = () => {
                     onBuy={(v) => { setSelectedVendor(v); setAction('buy'); }}
                     onSubscribe={(v) => { setSelectedVendor(v); setAction('subscribe'); }}
                 />
+
+                {/* Pagination */}
+                {vendors.length > 0 && (
+                    <div className="flex justify-center items-center gap-4 mt-8">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+                        >
+                            <ArrowRight size={20} />
+                        </button>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-8">
                     <div className="lg:col-span-8 space-y-20">
