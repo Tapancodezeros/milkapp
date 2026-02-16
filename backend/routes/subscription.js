@@ -58,4 +58,14 @@ router.put('/subscriptions/:id/cancel', authenticateToken, async (req, res) => {
     }
 });
 
+// DELETE /api/subscriptions/:id
+router.delete('/subscriptions/:id', authenticateToken, async (req, res) => {
+    try {
+        const sub = await SubscriptionService.delete(req.params.id, req.user.id);
+        return ApiResponse.success(res, "Subscription deleted", sub);
+    } catch (err) {
+        return ApiResponse.error(res, err.message, 500);
+    }
+});
+
 module.exports = router;

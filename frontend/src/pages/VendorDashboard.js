@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Milk, Loader2, TrendingUp, Users, Zap, Palmtree, Power } from 'lucide-react';
+import { Milk, Loader2, TrendingUp, Users, Zap, Palmtree, Power, TriangleAlert } from 'lucide-react';
 
 import Header from '../components/shared/Header';
 import StatsCard from '../components/shared/StatsCard';
@@ -57,6 +57,43 @@ const VendorDashboard = () => {
             setLoading(false);
         }
     }, [token]);
+
+    const showConfirmToast = (message, onConfirm, type = 'danger') => {
+        toast((t) => (
+            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-6 rounded-[2rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-100 dark:border-slate-800 flex flex-col gap-5 min-w-[320px] transform transition-all duration-500 ease-out translate-x-0">
+                <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${type === 'danger' ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-500'} dark:bg-opacity-10 shadow-inner`}>
+                        <TriangleAlert size={24} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-[13px] font-black text-slate-900 dark:text-white leading-snug">{message}</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Please confirm to proceed</p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => { toast.dismiss(t.id); onConfirm(); }}
+                        className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl ${type === 'danger'
+                                ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200 dark:shadow-none'
+                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none'
+                            }`}
+                    >
+                        Confirm
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 border border-slate-200/50 dark:border-slate-700/50"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: 6000,
+            position: 'top-center',
+            style: { background: 'transparent', boxShadow: 'none', border: 'none', padding: 0 }
+        });
+    };
 
     const fetchPaginatedData = React.useCallback(async () => {
         try {
@@ -125,7 +162,14 @@ const VendorDashboard = () => {
         }
     };
 
-    const toggleAvailability = async () => {
+    const toggleAvailability = () => {
+        const msg = stats.isAvailable
+            ? "Switch to Holiday Mode? Customers won't be able to buy/subscribe."
+            : "Activate Shop? You will start receiving orders.";
+        showConfirmToast(msg, () => confirmToggleAvailability(), 'primary');
+    };
+
+    const confirmToggleAvailability = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.put(`${API_BASE_URL}/vendor/toggle-availability`, {}, config);

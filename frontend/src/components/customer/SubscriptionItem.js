@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, LogOut } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 
-const SubscriptionItem = ({ sub, onToggle, onCancel }) => {
+const SubscriptionItem = ({ sub, onToggle, onCancel, onDelete }) => {
     return (
         <div className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group ${sub.status === 'active'
             ? 'bg-white dark:bg-slate-900 border-indigo-100 dark:border-indigo-900/30 shadow-[0_20px_50px_rgba(79,70,229,0.06)] dark:shadow-none'
@@ -40,7 +40,7 @@ const SubscriptionItem = ({ sub, onToggle, onCancel }) => {
             </div>
 
             <div className="relative z-10 pt-2 flex gap-3">
-                {sub.status !== 'cancelled' && (
+                {sub.status !== 'cancelled' ? (
                     <>
                         <button
                             onClick={() => onToggle(sub.id)}
@@ -56,6 +56,13 @@ const SubscriptionItem = ({ sub, onToggle, onCancel }) => {
                             <LogOut size={18} strokeWidth={2.5} className="rotate-180" />
                         </button>
                     </>
+                ) : (
+                    <button
+                        onClick={() => onDelete(sub.id)}
+                        className="w-full py-3.5 bg-red-600 text-white rounded-2xl hover:bg-red-500 font-bold uppercase tracking-widest text-xs transition-all active:scale-95 shadow-lg shadow-red-200 dark:shadow-none"
+                    >
+                        Delete Record
+                    </button>
                 )}
             </div>
 

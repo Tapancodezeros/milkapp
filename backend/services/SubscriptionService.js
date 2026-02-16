@@ -98,6 +98,19 @@ class SubscriptionService {
         await sub.save();
         return sub;
     }
+
+    async delete(id, userId) {
+        const sub = await Subscription.findByPk(id);
+        if (!sub) {
+            throw new Error("Subscription not found");
+        }
+        if (sub.customerId !== userId) {
+            throw new Error("Unauthorized");
+        }
+
+        await sub.destroy();
+        return { message: "Subscription deleted" };
+    }
 }
 
 module.exports = new SubscriptionService();

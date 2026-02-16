@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import CustomerDashboard from './pages/CustomerDashboard';
 import VendorDashboard from './pages/VendorDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
 const PrivateRoute = ({ children, role }) => {
@@ -43,6 +44,15 @@ const App = () => {
           element={
             <PrivateRoute role="vendor">
               <VendorDashboard />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <PrivateRoute role="admin">
+              <AdminDashboard />
             </PrivateRoute>
           }
         />

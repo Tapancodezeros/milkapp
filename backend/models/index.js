@@ -1,6 +1,7 @@
 const sequelize = require('../config/database');
 const Customer = require('./Customer');
 const Vendor = require('./Vendor');
+const Admin = require('./Admin');
 const Transaction = require('./Transaction');
 const Subscription = require('./Subscription');
 const InventoryHistory = require('./InventoryHistory');
@@ -25,6 +26,7 @@ module.exports = {
   sequelize,
   Customer,
   Vendor,
+  Admin,
   Transaction,
   Subscription,
   InventoryHistory

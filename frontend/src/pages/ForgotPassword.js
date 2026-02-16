@@ -16,10 +16,12 @@ const ForgotPassword = () => {
         setLoading(true);
         try {
             const res = await axios.post(`${API_BASE_URL}/forgot-password`, { email, role });
-            toast.success("Reset link created! (Check console for token)");
+            const link = res.data.data.resetLink;
+            toast.success("Reset link created! (Copied to console)");
+            console.log("Password Reset Link:", link);
             setTimeout(() => {
                 navigate(`/reset-password?token=${res.data.data.token}&role=${role}`);
-            }, 2000);
+            }, 3000);
         } catch (err) {
             toast.error(err.response?.data?.error || "Request failed");
         } finally {

@@ -24,6 +24,8 @@ const Login = () => {
             toast.success(res.data.message || "Welcome back!");
             if (user.role === 'vendor') {
                 navigate('/vendor');
+            } else if (user.role === 'admin') {
+                navigate('/admin');
             } else {
                 navigate('/customer');
             }
@@ -41,7 +43,7 @@ const Login = () => {
             <div className="absolute top-0 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
             <div className="absolute bottom-0 -right-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
 
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-10 mx-6">
+            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 mx-6">
                 <div className="flex flex-col items-center mb-10">
                     <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-4 rounded-3xl text-white shadow-2xl shadow-blue-500/20 mb-6 group transition-transform hover:scale-110">
                         <Zap size={32} />
@@ -80,20 +82,27 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
                         <button
                             type="button"
                             onClick={() => setForm({ ...form, role: 'customer' })}
-                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${form.role === 'customer' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
+                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'customer' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
                         >
-                            <Smile size={14} /> Customer
+                            <Smile size={12} /> Customer
                         </button>
                         <button
                             type="button"
                             onClick={() => setForm({ ...form, role: 'vendor' })}
-                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${form.role === 'vendor' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
+                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'vendor' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
                         >
-                            <Briefcase size={14} /> Vendor
+                            <Briefcase size={12} /> Vendor
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setForm({ ...form, role: 'admin' })}
+                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'admin' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            <Lock size={12} /> Admin
                         </button>
                     </div>
 

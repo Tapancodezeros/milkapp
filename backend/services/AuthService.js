@@ -1,4 +1,4 @@
-const { Customer, Vendor } = require('../models');
+const { Customer, Vendor, Admin } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -8,23 +8,34 @@ const { UserRole } = require('../utils/constants');
 const SECRET_KEY = process.env.SECRET_KEY || "supersecretkey";
 
 class AuthService {
+    getModel(role) {
+        switch (role) {
+            case UserRole.VENDOR: return Vendor;
+            case UserRole.ADMIN: return Admin;
+            default: return Customer;
+        }
+    }
+
     async register(data) {
         const { name, phone, email, password, role } = data;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const Model = role === UserRole.VENDOR ? Vendor : Customer;
+        const Model = this.getModel(role);
 
         const existingUser = await Model.findOne({ where: { email } });
         if (existingUser) {
             throw new Error("Email already registered");
         }
 
-        await Model.create({ name, phone, email, password: hashedPassword });
-        return { message: "Registration successful" };
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const welcomeLink = `${frontendUrl}/forgot-password`;
+
+        console.log(`[WELCOME] User ${email} registered. Login at: ${frontendUrl}`);
+        return { message: "Registration successful", loginLink: frontendUrl };
     }
 
     async login(data) {
         const { identifier, password, role } = data;
-        const Model = role === UserRole.VENDOR ? Vendor : Customer;
+        const Model = this.getModel(role);
 
         const user = await Model.findOne({
             where: {
@@ -50,7 +61,7 @@ class AuthService {
 
     async forgotPassword(data) {
         const { email, role } = data;
-        const Model = role === UserRole.VENDOR ? Vendor : Customer;
+        const Model = this.getModel(role);
 
         const user = await Model.findOne({ where: { email } });
         if (!user) {
@@ -62,13 +73,16 @@ class AuthService {
         user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
         await user.save();
 
-        console.log(`Password reset token for ${email}: ${token}`);
-        return { token };
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const resetLink = `${frontendUrl}/reset-password?token=${token}&role=${role}`;
+
+        console.log(`Password reset link for ${email}: ${resetLink}`);
+        return { token, resetLink };
     }
 
     async resetPassword(data) {
         const { token, newPassword, role } = data;
-        const Model = role === UserRole.VENDOR ? Vendor : Customer;
+        const Model = this.getModel(role);
 
         const user = await Model.findOne({
             where: {
