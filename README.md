@@ -4,44 +4,48 @@ MilkApp is a comprehensive v4.0 platform designed to streamline the connection b
 
 ## 🚀 Features
 
-### For Customers
-- **Dashboard**: Real-time overview of wallet balance, active subscriptions, and monthly spending charts.
-- **Wallet**: Secure top-up system (up to ₹50,000) for seamless automated or manual payments.
-- **Subscriptions**: Subscribe to daily deliveries (7 days, 1 month, or 3 months) with fixed rates.
-- **Manual Payments**: Pay for pending subscription orders directly from the dashboard.
-- **Subscription Management**: Flexible control to pause, resume, or cancel delivery connections.
-- **One-time Purchase**: Buy milk directly from available vendors using wallet balance.
-- **Delivery Verification**: Verify delivery status to unlock digital receipts and track order history.
-- **Digital Receipts**: View, print, or export detailed receipts for all verified transactions.
+### ✨ UX/UI Design
+- **Premium Aesthetics**: Glassmorphism effects, smooth transitions, and a modern color palette.
+- **Dark/Light Mode**: Fully responsive theme switching with persistent state.
+- **Interactive Elements**: Custom animated toast notifications, micro-interactions, and loading states.
+- **Responsive Layouts**: Optimized for seamless experience across all devices.
 
-### For Vendors
-- **Inventory Management**: Update milk stock levels and set daily rates.
-- **Subscription Processing**: Process daily subscription orders for all active customers with a single click.
-- **Delivery Management**: Update delivery status (Delivered/Failed) for all daily orders.
-- **Reports & Analytics**: Comprehensive monthly revenue and volume reports with visual data charts.
-- **Transaction History**: Monitor sales and payments through a paginated ledger stream.
+### 👤 For Customers
+- **Smart Dashboard**: Real-time overview of wallet balance, active subscriptions, and monthly spending charts.
+- **Wallet & Transactions**: Secure top-up system (up to ₹50,000) with detailed transaction history and **CSV Export** functionality.
+- **Flexible Subscriptions**: Subscribe to daily deliveries (7 days, 1 month, or 3 months) with pause/resume capabilities.
+- **Digital Receipts**: Instant verified receipts for every delivery with options to **Print** or **Download**.
+- **Delivery Verification**: Interactive system to verify or report delivery issues.
 
-### For Administrators
-- **Dashboard Overview**: Comprehensive view of system metrics (Total Customers, Vendors, Revenue, Active Subscriptions) with date-based filtering (All Time, This Month, Last Month, This Week).
-- **User Management**: Full control to Create, Update, and Delete Customers and Vendors. Includes password reset functionality.
-- **Transaction Oversight**: View recent transactions and filter full transaction history by status (Paid/Pending).
-- **Subscription Monitoring**: Track and monitor all active subscriptions in the system.
+### 🏪 For Vendors
+- **Business Operations**: Real-time inventory management and rate setting.
+- **Sales Intelligence**: Detailed analytics charts for monthly revenue and volume trends.
+- **Ledger Management**: comprehensive sales history with **CSV Export** for offline accounting.
+- **Order Fulfillment**: Bulk processing for daily subscriptions and individual one-time orders.
+- **Availability Control**: Toggle "Holiday Mode" to pause new orders when unavailable.
+
+### 🛡️ For Administrators
+- **Advanced User Management**: capable table views with **Sorting**, **Pagination**, and **Search** for Customers and Vendors.
+- **Secure Controls**: Custom confirmation modals for critical actions (Delete/Edit) to prevent accidental data loss.
+- **Activity Monitoring**: Track system-wide metrics, active subscriptions, and transaction flows.
+- **Edit Capabilities**: Seamless inline editing for user details with change tracking and validation.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React**: UI library.
-- **Tailwind CSS**: Modern styling.
-- **Lucide React**: Icon set.
-- **Axios**: API communication.
-- **Recharts**: Data visualization for reports.
-- **React Hot Toast**: Toast notifications.
+- **React**: Core UI library.
+- **Tailwind CSS**: Utility-first styling with custom animations.
+- **Lucide React**: Modern, consistent icon set.
+- **Recharts**: Interactive data visualization.
+- **React Hot Toast**: Beautiful, stackable toast notifications.
+- **Axios**: Optimized HTTP client with interceptors.
 
 ### Backend
 - **Node.js & Express**: Server-side logic.
 - **Sequelize (PostgreSQL)**: ORM for database management.
 - **JWT & Bcryptjs**: Secure authentication and password hashing.
 - **CORS**: Cross-origin resource sharing.
+- **Swagger UI**: API documentation and testing interface.
 
 ## 📦 Project Structure
 
@@ -57,10 +61,16 @@ milkapp/
 │   ├── index.js           # Main server entry point
 │   └── .env               # Backend environment variables
 ├── frontend/               # React application
-│   ├── src/               # React components, pages, and logic
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page-level components
-│   │   └── api/           # API configuration and service calls
+│   ├── src/               # React application source
+│   │   ├── components/    # UI Components
+│   │   │   ├── shared/    # Reusable components (Header, Modal, etc.)
+│   │   │   ├── customer/  # Customer-specific components
+│   │   │   ├── vendor/    # Vendor-specific components
+│   │   │   └── admin/     # Admin-specific components
+│   │   ├── pages/         # Page-level components (Dashboards)
+│   │   ├── context/       # Global state (ThemeContext, AuthContext)
+│   │   ├── api/           # API configuration
+│   │   └── App.js         # Main App Component
 │   ├── public/            # Static assets
 │   └── .env               # Frontend configuration
 └── README.md               # Project documentation
@@ -99,6 +109,8 @@ Create a PostgreSQL database named `yourdbname`.
    ```bash
    npm run dev
    ```
+5. Access API Documentation:
+   http://localhost:5000/api-docs
 
 ### 3. Frontend Configuration
 1. Navigate to the `frontend` directory:
