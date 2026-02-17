@@ -1,17 +1,27 @@
 import React from 'react';
-import { History, CheckCircle, Clock, ArrowRight } from 'lucide-react';
+import { History, CheckCircle, Clock, ArrowRight, Search } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 
-const CustomerTransactions = ({ transactions, onVerify, onPay, onShowReceipt }) => {
+const CustomerTransactions = ({ transactions, onVerify, onPay, onShowReceipt, searchQuery, setSearchQuery }) => {
     return (
         <div className="bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden transition-colors duration-500">
-            <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-gradient-to-b from-slate-50/50 to-white/0 dark:from-slate-900/50 dark:to-transparent">
+            <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-gradient-to-b from-slate-50/50 to-white/0 dark:from-slate-900/50 dark:to-transparent">
                 <div>
                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2 flex items-center gap-3">
                         <div className="p-2.5 bg-blue-50/50 dark:bg-blue-900/20 rounded-[1.2rem] text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30 shadow-sm"><History size={22} strokeWidth={2.5} /></div>
                         Transactions
                     </h2>
                     <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-2">History</p>
+                </div>
+                <div className="relative group w-full md:w-auto">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                        type="text"
+                        placeholder="Search vendor or ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full md:w-64 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all shadow-sm"
+                    />
                 </div>
             </div>
             <div className="overflow-x-auto custom-scrollbar">

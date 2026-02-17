@@ -54,12 +54,26 @@ router.get('/overview', async (req, res) => {
             ]
         });
 
+        const allTransactions = await Transaction.findAll({
+            where: { status: 'completed' },
+            attributes: ['amount', 'quantity', 'date']
+        });
+
+        const monthlyReports = {};
+        allTransactions.forEach(t => {
+            const month = t.date ? t.date.substring(0, 7) : new Date().toISOString().substring(0, 7);
+            if (!monthlyReports[month]) monthlyReports[month] = { revenue: 0, volume: 0 };
+            monthlyReports[month].revenue += parseFloat(t.amount);
+            monthlyReports[month].volume += parseFloat(t.quantity);
+        });
+
         return ApiResponse.success(res, "Overview stats fetched successfully", {
             totalCustomers,
             totalVendors,
             totalRevenue,
             activeSubscriptions,
-            recentTransactions
+            recentTransactions,
+            monthlyReports
         });
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);

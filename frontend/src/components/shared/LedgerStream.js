@@ -1,10 +1,10 @@
-import { History, Download } from 'lucide-react';
+import { History, Download, Search } from 'lucide-react';
 import Card from '../shared/Card';
 
-const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdateDelivery, onExport }) => {
+const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdateDelivery, onExport, searchQuery, setSearchQuery }) => {
     return (
         <Card className="flex flex-col transition-colors duration-500" noPadding>
-            <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-gradient-to-b from-slate-50/50 to-white dark:from-slate-900/50 dark:to-transparent">
+            <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-gradient-to-b from-slate-50/50 to-white dark:from-slate-900/50 dark:to-transparent">
                 <div>
                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2 flex items-center gap-3">
                         <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400"><History size={20} /></div>
@@ -12,12 +12,24 @@ const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdate
                     </h2>
                     <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest opacity-60">History</p>
                 </div>
-                <button
-                    onClick={onExport}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold uppercase text-[10px] tracking-widest"
-                >
-                    <Download size={16} /> Export CSV
-                </button>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative group flex-1 md:flex-none">
+                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search customer..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full md:w-64 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all shadow-sm"
+                        />
+                    </div>
+                    <button
+                        onClick={onExport}
+                        className="flex items-center gap-2 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold uppercase text-[10px] tracking-widest border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                    >
+                        <Download size={16} /> Export
+                    </button>
+                </div>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">

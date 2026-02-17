@@ -43,10 +43,12 @@ const CustomerDashboard = () => {
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
     const [txFilter, setTxFilter] = useState('all');
+    const [txSearchQuery, setTxSearchQuery] = useState('');
     const navigate = useNavigate();
 
     const handleExportReceipt = () => {
         if (!selectedReceipt) return;
+
 
         const headers = ['ReceiptID', 'Date', 'Vendor', 'Item', 'Quantity(L)', 'Amount(INR)', 'Status'];
         const row = [
@@ -100,8 +102,16 @@ const CustomerDashboard = () => {
     };
 
     const filteredTransactions = transactions.filter(t => {
+        const matchesSearch = txSearchQuery
+            ? (t.Vendor?.name?.toLowerCase().includes(txSearchQuery.toLowerCase()) ||
+                String(t.id).includes(txSearchQuery) ||
+                String(t.amount).includes(txSearchQuery))
+            : true;
+
+        if (!matchesSearch) return false;
+
         if (txFilter === 'all') return true;
-        if (txFilter === 'pending') return t.status === 'ordered'; // Assuming 'ordered' is pending for delivery check
+        if (txFilter === 'pending') return t.status === 'ordered';
         if (txFilter === 'completed') return t.status === 'completed';
         if (txFilter === 'delivered') return t.status === 'delivered';
         return true;
@@ -548,6 +558,8 @@ const CustomerDashboard = () => {
                         onVerify={verifyTransaction}
                         onShowReceipt={(t) => setSelectedReceipt(t)}
                         onPay={handlePayTransaction}
+                        searchQuery={txSearchQuery}
+                        setSearchQuery={setTxSearchQuery}
                     />
                 </div>
 

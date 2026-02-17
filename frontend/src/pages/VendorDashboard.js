@@ -27,6 +27,7 @@ const VendorDashboard = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [paginatedSales, setPaginatedSales] = useState([]);
     const [showProfile, setShowProfile] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
     const token = sessionStorage.getItem('token');
@@ -57,6 +58,31 @@ const VendorDashboard = () => {
             setLoading(false);
         }
     }, [token]);
+
+    // ... (keep showConfirmToast as is)
+
+    const fetchPaginatedData = React.useCallback(async () => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const paginatedRes = await axios.get(`${API_BASE_URL}/transactions?paginate=true&page=${currentPage}&limit=10&search=${searchQuery}`, config);
+            setPaginatedSales(paginatedRes.data.data.data);
+            setTotalPages(paginatedRes.data.data.totalPages);
+        } catch (err) {
+            console.error("Paginated Fetch Error:", err);
+        }
+    }, [token, currentPage, searchQuery]);
+
+    useEffect(() => {
+        if (!token || user?.role !== 'vendor') {
+            navigate('/');
+            return;
+        }
+        fetchGlobalData();
+    }, [refreshKey, fetchGlobalData, navigate, token, user?.role]);
+
+    useEffect(() => {
+        if (token) fetchPaginatedData();
+    }, [currentPage, refreshKey, fetchPaginatedData, token, searchQuery]);
 
     const showConfirmToast = (message, onConfirm, type = 'danger') => {
         toast((t) => (
@@ -95,28 +121,6 @@ const VendorDashboard = () => {
         });
     };
 
-    const fetchPaginatedData = React.useCallback(async () => {
-        try {
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            const paginatedRes = await axios.get(`${API_BASE_URL}/transactions?paginate=true&page=${currentPage}&limit=10`, config);
-            setPaginatedSales(paginatedRes.data.data.data);
-            setTotalPages(paginatedRes.data.data.totalPages);
-        } catch (err) {
-            console.error("Paginated Fetch Error:", err);
-        }
-    }, [token, currentPage]);
-
-    useEffect(() => {
-        if (!token || user?.role !== 'vendor') {
-            navigate('/');
-            return;
-        }
-        fetchGlobalData();
-    }, [refreshKey, fetchGlobalData, navigate, token, user?.role]);
-
-    useEffect(() => {
-        if (token) fetchPaginatedData();
-    }, [currentPage, refreshKey, fetchPaginatedData, token]);
 
     const handleUpdate = async (type) => {
         try {
@@ -300,6 +304,8 @@ const VendorDashboard = () => {
                             setCurrentPage={setCurrentPage}
                             onUpdateDelivery={handleUpdateDelivery}
                             onExport={handleExportSales}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
                         />
                     </div>
                 </div>
