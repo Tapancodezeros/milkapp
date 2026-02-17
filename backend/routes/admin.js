@@ -69,7 +69,19 @@ router.get('/overview', async (req, res) => {
 // User Management
 router.get('/customers', async (req, res) => {
     try {
+        const { search } = req.query;
+        let where = {};
+        if (search) {
+            where = {
+                [Op.or]: [
+                    { name: { [Op.iLike]: `%${search}%` } },
+                    { email: { [Op.iLike]: `%${search}%` } },
+                    { phone: { [Op.iLike]: `%${search}%` } }
+                ]
+            };
+        }
         const customers = await Customer.findAll({
+            where,
             attributes: { exclude: ['password'] }
         });
         return ApiResponse.success(res, "Customers fetched successfully", customers);
@@ -80,7 +92,19 @@ router.get('/customers', async (req, res) => {
 
 router.get('/vendors', async (req, res) => {
     try {
+        const { search } = req.query;
+        let where = {};
+        if (search) {
+            where = {
+                [Op.or]: [
+                    { name: { [Op.iLike]: `%${search}%` } },
+                    { email: { [Op.iLike]: `%${search}%` } },
+                    { phone: { [Op.iLike]: `%${search}%` } }
+                ]
+            };
+        }
         const vendors = await Vendor.findAll({
+            where,
             attributes: { exclude: ['password'] }
         });
         return ApiResponse.success(res, "Vendors fetched successfully", vendors);
@@ -92,11 +116,18 @@ router.get('/vendors', async (req, res) => {
 // Transaction Management
 router.get('/transactions', async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, search } = req.query;
         const whereClause = {};
 
         if (status && status !== 'all') {
             whereClause.status = status;
+        }
+
+        if (search) {
+            whereClause[Op.or] = [
+                { '$Customer.name$': { [Op.iLike]: `%${search}%` } },
+                { '$Vendor.name$': { [Op.iLike]: `%${search}%` } }
+            ];
         }
 
         const transactions = await Transaction.findAll({

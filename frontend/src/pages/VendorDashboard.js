@@ -74,8 +74,8 @@ const VendorDashboard = () => {
                     <button
                         onClick={() => { toast.dismiss(t.id); onConfirm(); }}
                         className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl ${type === 'danger'
-                                ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200 dark:shadow-none'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none'
+                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200 dark:shadow-none'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none'
                             }`}
                     >
                         Confirm
@@ -201,6 +201,35 @@ const VendorDashboard = () => {
             };
         });
 
+    const handleExportSales = () => {
+        if (!sales || sales.length === 0) return toast.error("No sales data to export");
+
+        const headers = ['ID', 'Date', 'Customer', 'Quantity(L)', 'Amount(INR)', 'Type', 'Delivery Status'];
+        const rowMapper = (s) => [
+            s.id,
+            s.date,
+            s.Customer?.name || 'Guest',
+            s.quantity,
+            s.amount,
+            s.type,
+            s.deliveryStatus || 'Pending'
+        ];
+
+        const csvContent = [
+            headers.join(','),
+            ...sales.map(s => rowMapper(s).map(val => `"${val || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `vendor_sales_report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading && sales.length === 0) {
         return (
             <div className="flex justify-center items-center h-screen bg-slate-50 dark:bg-slate-950 text-indigo-600 dark:text-indigo-400">
@@ -270,6 +299,7 @@ const VendorDashboard = () => {
                             totalPages={totalPages}
                             setCurrentPage={setCurrentPage}
                             onUpdateDelivery={handleUpdateDelivery}
+                            onExport={handleExportSales}
                         />
                     </div>
                 </div>

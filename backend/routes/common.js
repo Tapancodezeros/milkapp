@@ -7,8 +7,11 @@ const ApiResponse = require('../utils/apiResponse');
 // GET /api/vendors
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const vendors = await VendorService.getAllVendors();
-        return ApiResponse.success(res, "Vendors fetched", vendors);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 3;
+        const search = req.query.search || '';
+        const result = await VendorService.getAllVendors(page, limit, search);
+        return ApiResponse.success(res, "Vendors fetched", result);
     } catch (err) {
         return ApiResponse.error(res, err.message, 500);
     }

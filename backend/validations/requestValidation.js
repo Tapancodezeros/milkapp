@@ -2,6 +2,10 @@ class Validation {
     static register(req, res, next) {
         const { name, phone, email, password, role } = req.body;
         if (!name || name.length < 2 || name.length > 50) return res.status(400).json({ error: "Name must be between 2 and 50 characters" });
+
+        const phoneStr = String(phone || '');
+        if (!/^\d{10}$/.test(phoneStr)) return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+
         if (!password || password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
         if (!['customer', 'vendor'].includes(role)) return res.status(400).json({ error: "Invalid role" });
         if (!email || !email.includes('@')) return res.status(400).json({ error: "Invalid email" });
@@ -71,6 +75,10 @@ class Validation {
     static updateProfile(req, res, next) {
         const { name, phone, password } = req.body;
         if (name && (name.length < 2 || name.length > 50)) return res.status(400).json({ error: "Name must be between 2 and 50 characters" });
+        if (phone) {
+            const phoneStr = String(phone);
+            if (!/^\d{10}$/.test(phoneStr)) return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+        }
         if (password && password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
         next();
     }

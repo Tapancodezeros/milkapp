@@ -139,8 +139,34 @@ class VendorService {
         return { isAvailable: vendor.isAvailable };
     }
 
-    async getAllVendors() {
-        return await Vendor.findAll({ attributes: ['id', 'name', 'phone', 'email', 'rate', 'availableMilk', 'isAvailable'] });
+    async getAllVendors(page = 1, limit = 3, search = '') {
+        const offset = (page - 1) * limit;
+        const where = {};
+        if (search) {
+            where[Op.or] = [
+                { name: { [Op.iLike]: `%${search}%` } },
+                { email: { [Op.iLike]: `%${search}%` } },
+                { phone: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        const { count, rows } = await Vendor.findAndCountAll({
+            where,
+            attributes: ['id', 'name', 'phone', 'email', 'rate', 'availableMilk', 'isAvailable'],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            vendors: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: parseInt(page),
+                limit: parseInt(limit)
+            }
+        };
     }
 
     async updateProfile(id, data) {

@@ -71,11 +71,16 @@ const Register = () => {
                                 <Phone className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
                             </div>
                             <input
-                                type="text"
-                                placeholder="Phone Number"
+                                type="tel"
+                                placeholder="Phone Number (10 digits)"
                                 className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-sm"
                                 value={form.phone}
-                                onChange={e => setForm({ ...form, phone: e.target.value })}
+                                maxLength={10}
+                                inputMode="numeric"
+                                onChange={e => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    if (val.length <= 10) setForm({ ...form, phone: val });
+                                }}
                             />
                         </div>
                         <div className="relative group">

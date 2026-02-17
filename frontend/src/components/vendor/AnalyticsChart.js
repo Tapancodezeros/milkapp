@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, Download } from 'lucide-react';
 import {
     ResponsiveContainer,
     AreaChart,
@@ -19,6 +19,23 @@ const AnalyticsChart = ({ reportData, title, subTitle }) => {
     const isRevenue = view === 'revenue';
     const color = isRevenue ? '#6366F1' : '#10B981';
 
+    const handleDownload = () => {
+        const headers = ['Period', 'Revenue', 'Volume'];
+        const csvContent = [
+            headers.join(','),
+            ...reportData.map(row => `${row.name},${row.revenue},${row.volume}`)
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${title.replace(/\s+/g, '_').toLowerCase()}_report.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden group transition-colors duration-500">
             <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-gradient-to-b from-slate-50/50 to-white/0 dark:from-slate-900/50 dark:to-transparent">
@@ -26,17 +43,26 @@ const AnalyticsChart = ({ reportData, title, subTitle }) => {
                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2">{title}</h2>
                     <p className="text-sm text-slate-400 dark:text-slate-500 font-bold uppercase tracking-[0.2em] ml-2">{subTitle}</p>
                 </div>
-                <div className="flex bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-[1.2rem] border border-slate-200/50 dark:border-slate-700/50 shadow-inner backdrop-blur-sm">
+                <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setView('revenue')}
-                        className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${isRevenue ? 'bg-white dark:bg-slate-700 shadow-lg dark:shadow-none text-slate-900 dark:text-white border border-slate-100 dark:border-slate-600' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}>
-                        Revenue
+                        onClick={handleDownload}
+                        className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
+                        title="Download Report"
+                    >
+                        <Download size={20} />
                     </button>
-                    <button
-                        onClick={() => setView('volume')}
-                        className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${!isRevenue ? 'bg-white dark:bg-slate-700 shadow-lg dark:shadow-none text-slate-900 dark:text-white border border-slate-100 dark:border-slate-600' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}>
-                        Volume
-                    </button>
+                    <div className="flex bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-[1.2rem] border border-slate-200/50 dark:border-slate-700/50 shadow-inner backdrop-blur-sm">
+                        <button
+                            onClick={() => setView('revenue')}
+                            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${isRevenue ? 'bg-white dark:bg-slate-700 shadow-lg dark:shadow-none text-slate-900 dark:text-white border border-slate-100 dark:border-slate-600' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}>
+                            Revenue
+                        </button>
+                        <button
+                            onClick={() => setView('volume')}
+                            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${!isRevenue ? 'bg-white dark:bg-slate-700 shadow-lg dark:shadow-none text-slate-900 dark:text-white border border-slate-100 dark:border-slate-600' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}>
+                            Volume
+                        </button>
+                    </div>
                 </div>
             </div>
 
