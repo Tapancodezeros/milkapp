@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useTheme } from './context/ThemeContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -20,10 +21,47 @@ const PrivateRoute = ({ children, role }) => {
   return children;
 };
 
-const App = () => {
+const AppContent = () => {
+  const { isDarkMode } = useTheme();
+
   return (
-    <Router>
-      <Toaster position="top-center" reverseOrder={false} />
+    <>
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          className: '',
+          style: {
+            background: isDarkMode ? '#0f172a' : '#ffffff',
+            color: isDarkMode ? '#f8fafc' : '#0f172a',
+            border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0',
+            padding: '16px',
+            borderRadius: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            fontSize: '13px',
+            fontWeight: '600',
+            maxWidth: '400px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#3b82f6',
+              secondary: isDarkMode ? '#0f172a' : '#ffffff',
+            },
+            style: {
+              background: isDarkMode ? '#0f172a' : '#ffffff',
+            }
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: isDarkMode ? '#0f172a' : '#ffffff',
+            },
+            style: {
+              background: isDarkMode ? '#0f172a' : '#ffffff',
+            }
+          },
+        }}
+      />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -57,6 +95,14 @@ const App = () => {
           }
         />
       </Routes>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 };

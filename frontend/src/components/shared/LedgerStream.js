@@ -1,8 +1,7 @@
-import React from 'react';
-import { History, PlusCircle } from 'lucide-react';
+import { History, Download } from 'lucide-react';
 import Card from '../shared/Card';
 
-const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdateDelivery }) => {
+const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdateDelivery, onExport }) => {
     return (
         <Card className="flex flex-col transition-colors duration-500" noPadding>
             <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-gradient-to-b from-slate-50/50 to-white dark:from-slate-900/50 dark:to-transparent">
@@ -13,8 +12,11 @@ const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdate
                     </h2>
                     <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest opacity-60">History</p>
                 </div>
-                <button className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 dark:text-slate-600">
-                    <PlusCircle size={24} className="rotate-45" />
+                <button
+                    onClick={onExport}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold uppercase text-[10px] tracking-widest"
+                >
+                    <Download size={16} /> Export CSV
                 </button>
             </div>
             <div className="overflow-x-auto">

@@ -42,7 +42,70 @@ const CustomerDashboard = () => {
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
+    const [txFilter, setTxFilter] = useState('all');
     const navigate = useNavigate();
+
+    const handleExportReceipt = () => {
+        if (!selectedReceipt) return;
+
+        const headers = ['ReceiptID', 'Date', 'Vendor', 'Item', 'Quantity(L)', 'Amount(INR)', 'Status'];
+        const row = [
+            `#${String(selectedReceipt.id).slice(-8).toUpperCase()}`,
+            selectedReceipt.date,
+            selectedReceipt.Vendor?.name || 'Unknown',
+            `Milk (${selectedReceipt.type === 'subscription' ? 'Sub' : 'One-time'})`,
+            selectedReceipt.quantity,
+            selectedReceipt.amount,
+            'Verified'
+        ];
+
+        const csvContent = [headers.join(','), row.join(',')].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Receipt_${selectedReceipt.id}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportAllTransactions = () => {
+        if (!transactions || transactions.length === 0) return toast.error("No transactions to export");
+
+        const headers = ['ID', 'Date', 'Vendor', 'Quantity(L)', 'Amount(INR)', 'Type', 'Status'];
+        const rowMapper = (t) => [
+            t.id,
+            t.date,
+            t.Vendor?.name || 'Unknown',
+            t.quantity,
+            t.amount,
+            t.type,
+            t.status
+        ];
+
+        const csvContent = [
+            headers.join(','),
+            ...transactions.map(t => rowMapper(t).map(val => `"${val || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `customer_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const filteredTransactions = transactions.filter(t => {
+        if (txFilter === 'all') return true;
+        if (txFilter === 'pending') return t.status === 'ordered'; // Assuming 'ordered' is pending for delivery check
+        if (txFilter === 'completed') return t.status === 'completed';
+        if (txFilter === 'delivered') return t.status === 'delivered';
+        return true;
+    });
 
     const token = sessionStorage.getItem('token');
     const user = JSON.parse(sessionStorage.getItem('user'));
@@ -454,8 +517,34 @@ const CustomerDashboard = () => {
                 </div>
 
                 <div className="pt-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white">Transaction History</h2>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleExportAllTransactions}
+                                className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 shadow-sm transition-all"
+                                title="Export All Transactions"
+                            >
+                                <Download size={18} />
+                            </button>
+                            <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                {['all', 'delivered', 'completed'].map(f => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setTxFilter(f)}
+                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${txFilter === f
+                                            ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-md'
+                                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                                            }`}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                     <CustomerTransactions
-                        transactions={transactions}
+                        transactions={filteredTransactions}
                         onVerify={verifyTransaction}
                         onShowReceipt={(t) => setSelectedReceipt(t)}
                         onPay={handlePayTransaction}
@@ -690,6 +779,7 @@ const CustomerDashboard = () => {
                                 <Printer size={16} /> Print
                             </button>
                             <button
+                                onClick={handleExportReceipt}
                                 className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 p-5 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 dark:shadow-none flex items-center justify-center gap-2 active:scale-95"
                             >
                                 <Download size={16} /> Export
