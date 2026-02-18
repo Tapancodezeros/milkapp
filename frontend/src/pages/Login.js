@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Lock, LogIn, Briefcase, Smile, Loader2, Zap } from 'lucide-react';
+import { User, Lock, LogIn, Briefcase, Smile, Loader2, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { API_BASE_URL } from '../api/config';
@@ -38,90 +38,153 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0F172A] flex justify-center items-center relative overflow-hidden font-sans">
-            {/* Animated Background Elements */}
-            <div className="absolute top-0 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
-            <div className="absolute bottom-0 -right-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="min-h-screen bg-background flex relative overflow-hidden font-sans">
+            {/* Ambient Background */}
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none"></div>
+            <div className="absolute top-0 left-1/4 w-[1000px] h-[1000px] bg-primary-900/20 rounded-full blur-[120px] -translate-y-1/2 pointer-events-none animate-pulse-slow"></div>
+            <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-accent-900/20 rounded-full blur-[100px] translate-y-1/3 pointer-events-none"></div>
 
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 mx-6">
-                <div className="flex flex-col items-center mb-10">
-                    <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-4 rounded-3xl text-white shadow-2xl shadow-blue-500/20 mb-6 group transition-transform hover:scale-110">
-                        <Zap size={32} />
+            {/* Left Side: Brand & Visuals (Hidden on mobile) */}
+            <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 relative z-10 text-white">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-gradient-to-tr from-primary-500 to-accent-500 p-2.5 rounded-xl shadow-lg shadow-primary-500/30">
+                            <Zap size={24} className="text-white" fill="currentColor" />
+                        </div>
+                        <h1 className="text-2xl font-display font-bold tracking-tight">DairyHub</h1>
                     </div>
-                    <h2 className="text-3xl font-black text-white tracking-tight text-center">Login</h2>
-                    <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Welcome to Dairy Hub</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div className="space-y-4">
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Email or Name"
-                                className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-sm"
-                                value={form.identifier}
-                                onChange={e => setForm({ ...form, identifier: e.target.value })}
-                                required
-                            />
+                <div className="max-w-md">
+                    <h2 className="text-6xl font-display font-bold leading-tight mb-6">
+                        Fresh Milk, <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Delivered Daily.</span>
+                    </h2>
+                    <p className="text-lg text-slate-400 mb-8 leading-relaxed">
+                        Experience the premium marketplace for dairy products. Connect with verified local vendors and manage your subscriptions with ease.
+                    </p>
+
+                    <div className="flex items-center gap-4">
+                        <div className="flex -space-x-4">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="w-12 h-12 rounded-full border-2 border-background bg-slate-800 flex items-center justify-center text-xs text-slate-500">
+                                    <User size={16} />
+                                </div>
+                            ))}
                         </div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                        <div className="text-sm">
+                            <p className="font-bold text-white">2k+ Happy Customers</p>
+                            <div className="flex text-yellow-500 text-xs gap-0.5 mt-0.5">
+                                {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
                             </div>
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-sm"
-                                value={form.password}
-                                onChange={e => setForm({ ...form, password: e.target.value })}
-                                required
-                            />
                         </div>
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                        <button
-                            type="button"
-                            onClick={() => setForm({ ...form, role: 'customer' })}
-                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'customer' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            <Smile size={12} /> Customer
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setForm({ ...form, role: 'vendor' })}
-                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'vendor' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            <Briefcase size={12} /> Vendor
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setForm({ ...form, role: 'admin' })}
-                            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.role === 'admin' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            <Lock size={12} /> Admin
-                        </button>
+                <div className="text-xs text-slate-500 font-medium">
+                    © 2024 DairyHub Inc. All rights reserved.
+                </div>
+            </div>
+
+            {/* Right Side: Login Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative z-10">
+                <div className="w-full max-w-md">
+                    <div className="glass-card p-8 md:p-12 rounded-3xl border-t border-white/10 relative overflow-hidden group">
+
+                        {/* Decorative top sheen */}
+                        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                        <div className="mb-10">
+                            <h3 className="text-3xl font-display font-bold text-white mb-2">Welcome Back</h3>
+                            <p className="text-slate-400">Please enter your details to sign in.</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            {/* Role Selector */}
+                            <div className="grid grid-cols-3 gap-2 p-1.5 bg-black/40 rounded-2xl border border-white/5 mx-auto">
+                                {[
+                                    { id: 'customer', icon: Smile, label: 'Customer' },
+                                    { id: 'vendor', icon: Briefcase, label: 'Vendor' },
+                                    { id: 'admin', icon: ShieldCheck, label: 'Admin' }
+                                ].map((role) => (
+                                    <button
+                                        key={role.id}
+                                        type="button"
+                                        onClick={() => setForm({ ...form, role: role.id })}
+                                        className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${form.role === role.id
+                                                ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/50'
+                                                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                            }`}
+                                    >
+                                        <role.icon size={16} />
+                                        {role.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email or Username</label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <User className="h-5 w-5 text-slate-500 group-focus-within:text-primary-400 transition-colors" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            className="glass-input block w-full pl-12 pr-4 py-4 rounded-xl text-sm font-medium"
+                                            placeholder="Enter your identifier"
+                                            value={form.identifier}
+                                            onChange={e => setForm({ ...form, identifier: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-primary-400 transition-colors" />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            className="glass-input block w-full pl-12 pr-4 py-4 rounded-xl text-sm font-medium"
+                                            placeholder="••••••••"
+                                            value={form.password}
+                                            onChange={e => setForm({ ...form, password: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs font-medium text-primary-400 hover:text-primary-300 transition-colors"
+                                >
+                                    Forgot Password?
+                                </Link>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-500 hover:to-accent-500 text-white py-4 rounded-xl transition-all duration-300 flex justify-center items-center gap-2 font-bold text-sm tracking-wide shadow-lg shadow-primary-900/20 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={18} /></>}
+                            </button>
+                        </form>
+
+                        <div className="mt-8 pt-8 border-t border-white/5 text-center">
+                            <p className="text-slate-400 text-sm">
+                                Don't have an account?{' '}
+                                <Link to="/register" className="text-primary-400 font-bold hover:text-primary-300 transition-colors">
+                                    Create Free Account
+                                </Link>
+                            </p>
+                        </div>
                     </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 text-white py-5 rounded-2xl hover:bg-blue-500 transition-all flex justify-center items-center gap-3 font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-blue-900/40 transform active:scale-95 disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 className="animate-spin" /> : <><LogIn size={20} /> Login</>}
-                    </button>
-                </form>
-
-                <div className="mt-10 text-center space-y-4">
-                    <p className="text-slate-500 text-xs font-bold">
-                        Don't have an account? <Link to="/register" className="text-blue-400 hover:text-blue-300 transition-colors">Sign Up</Link>
-                    </p>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                        <Link to="/forgot-password" title="Recover Password" override="forgot-password-link" className="hover:text-blue-400 transition-colors">Forgot your password?</Link>
-                    </p>
                 </div>
             </div>
         </div>

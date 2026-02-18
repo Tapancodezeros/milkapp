@@ -265,16 +265,16 @@ const VendorDashboard = () => {
                 )}
             />
 
-            <main className="flex-1 p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-10">
+            <main className="flex-1 p-6 pt-28 lg:p-10 lg:pt-32 max-w-[1600px] mx-auto w-full space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="relative group cursor-pointer" onClick={toggleAvailability}>
-                        <StatsCard label="Operating Mode" val={stats.isAvailable ? 'Active' : 'Holiday'} icon={stats.isAvailable ? Zap : Palmtree} color={stats.isAvailable ? 'emerald' : 'orange'} sub="Click to toggle" />
+                        <StatsCard label="Operating Mode" val={stats.isAvailable ? 'Active' : 'Holiday'} icon={stats.isAvailable ? Zap : Palmtree} color={stats.isAvailable ? 'emerald' : 'warning'} sub="Click to toggle" />
                         <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                             <Power size={14} className="text-white" />
                         </div>
                     </div>
-                    <StatsCard label="Stock" val={`${stats.availableMilk} L`} icon={Milk} color="blue" sub="Current amount" />
-                    <StatsCard label="Customers" val={subscriptions.length} icon={Users} color="indigo" sub="Active subscribers" />
+                    <StatsCard label="Stock" val={`${stats.availableMilk} L`} icon={Milk} color="primary" sub="Current amount" />
+                    <StatsCard label="Customers" val={subscriptions.length} icon={Users} color="secondary" sub="Active subscribers" />
                     <StatsCard label="Revenue" val={`₹${totalRev.toFixed(0)}`} icon={TrendingUp} color="emerald" sub="Total earned" />
                 </div>
 

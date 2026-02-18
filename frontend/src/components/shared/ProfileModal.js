@@ -39,12 +39,12 @@ const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
                 <div className="space-y-4">
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                            <User className="h-5 w-5 text-slate-400 dark:text-slate-500 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400 transition-colors" />
                         </div>
                         <input
                             type="text"
                             placeholder="Full Name"
-                            className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-sm"
+                            className="glass-input w-full pl-12 pr-4 py-3 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             value={form.name}
                             onChange={e => setForm({ ...form, name: e.target.value })}
                             required
@@ -53,12 +53,12 @@ const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
 
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <Phone className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                            <Phone className="h-5 w-5 text-slate-400 dark:text-slate-500 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400 transition-colors" />
                         </div>
                         <input
                             type="text"
                             placeholder="Phone Number"
-                            className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-sm"
+                            className="glass-input w-full pl-12 pr-4 py-3 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             value={form.phone}
                             onChange={e => setForm({ ...form, phone: e.target.value })}
                         />
@@ -66,28 +66,28 @@ const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
 
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                            <Lock className="h-5 w-5 text-slate-400 dark:text-slate-500 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400 transition-colors" />
                         </div>
                         <input
                             type="password"
                             placeholder="New Password (leave blank to keep current)"
-                            className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-sm"
+                            className="glass-input w-full pl-12 pr-4 py-3 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             value={form.password}
                             onChange={e => setForm({ ...form, password: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center px-4">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center px-4">
                     Your email ({user?.email}) cannot be changed for security reasons.
                 </p>
 
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-slate-900 dark:bg-blue-600 text-white py-5 rounded-2xl hover:bg-blue-600 dark:hover:bg-blue-500 transition-all flex justify-center items-center gap-3 font-black text-sm uppercase tracking-[0.2em] shadow-xl transform active:scale-95 disabled:opacity-50"
+                    className="w-full bg-primary-600 hover:bg-primary-500 text-white py-4 rounded-xl transition-all flex justify-center items-center gap-3 font-bold text-sm uppercase tracking-[0.2em] shadow-lg shadow-primary-500/20 transform active:scale-95 disabled:opacity-50"
                 >
-                    {loading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> Save Changes</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Save size={18} /> Save Changes</>}
                 </button>
             </form>
         </Modal>

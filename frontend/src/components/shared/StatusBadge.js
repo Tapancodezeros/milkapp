@@ -1,19 +1,38 @@
 import React from 'react';
 
-const StatusBadge = ({ status, variant = 'default' }) => {
-    const variants = {
-        active: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-        paused: 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400',
-        cancelled: 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400',
-        pending: 'bg-orange-500/10 dark:bg-orange-900/20 border-orange-500/50 dark:border-orange-900/30 text-orange-400',
-        stable: 'bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500/50 dark:border-emerald-900/30 text-emerald-400',
-        completed: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-        default: 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+const StatusBadge = ({ status, variant }) => {
+    // Standardize status text
+    const statusKey = (status || '').toLowerCase();
+
+    // Map status/variant to design system tokens
+    const styles = {
+        // Success states
+        active: 'bg-success/10 text-success border-success/20 shadow-glow-sm',
+        completed: 'bg-success/10 text-success border-success/20 shadow-glow-sm',
+        delivered: 'bg-success/10 text-success border-success/20 shadow-glow-sm',
+        stable: 'bg-success/10 text-success border-success/20 shadow-glow-sm',
+
+        // Warning/Yellow states
+        pending: 'bg-warning/10 text-warning border-warning/20 shadow-glow-sm',
+        paused: 'bg-warning/10 text-warning border-warning/20 shadow-glow-sm',
+
+        // Danger/Red states
+        cancelled: 'bg-danger/10 text-danger border-danger/20 shadow-glow-sm',
+        not_delivered: 'bg-danger/10 text-danger border-danger/20 shadow-glow-sm',
+
+        // Default/Neutral states
+        default: 'bg-surface text-slate-400 border-white/10'
     };
 
+    // Use variant if provided, otherwise fallback to statusKey, then default
+    const selectedStyle = styles[variant] || styles[statusKey] || styles.default;
+
+    // Format label (remove underscores)
+    const label = status?.replace('_', ' ') || 'Unknown';
+
     return (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${variants[status] || variants.default}`}>
-            {status}
+        <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase border backdrop-blur-md transition-all duration-300 hover:scale-105 ${selectedStyle}`}>
+            {label}
         </span>
     );
 };

@@ -1,101 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.app-container {
-  @apply max-w-7xl mx-auto p-8 font-sans text-gray-800;
+@layer base {
+  :root {
+    /* Light Mode - Slate 50 base */
+    --background: 248 250 252;
+    --surface: 255 255 255;
+    --text-main: 15 23 42;
+    /* Slate 900 */
+    --text-muted: 100 116 139;
+    /* Slate 500 */
+  }
+
+  .dark {
+    /* Dark Mode - Gray 950 base */
+    --background: 3 7 18;
+    --surface: 17 24 39;
+    --text-main: 226 232 240;
+    /* Slate 200 */
+    --text-muted: 148 163 184;
+    /* Slate 400 */
+  }
+
+  body {
+    @apply bg-background text-[rgb(var(--text-main))] antialiased selection:bg-primary-500/30 selection:text-primary-600 dark:selection:text-white transition-colors duration-300;
+  }
 }
 
-body {
-  @apply bg-gray-50;
-}
-
-/* Custom Scrollbar */
 @layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+
+  /* Glassmorphism Utilities - Theme Aware */
+  .glass {
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-lg dark:shadow-glass;
+  }
+
+  .glass-card {
+    @apply bg-white/60 dark:bg-surface/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-xl hover:border-slate-300 dark:hover:border-white/10 transition-all duration-300;
+  }
+
+  .glass-input {
+    @apply bg-white/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition-all duration-300;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700/50 rounded-full hover:bg-slate-600/50 transition-colors;
   }
 }
 
-@keyframes modal {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* Animations */
+.animate-delay-100 {
+  animation-delay: 100ms;
 }
 
-.animate-modal {
-  animation: modal 0.2s ease-out forwards;
+.animate-delay-200 {
+  animation-delay: 200ms;
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
-  }
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
 
-  .glass-card-dark {
-    @apply bg-black/10 backdrop-blur-md border border-white/10;
-  }
-
-  .stat-label {
-    @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 block;
-  }
-
-  .floating {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0% {
-      transform: translateY(0px) rotate(0deg);
-    }
-
-    50% {
-      transform: translateY(-20px) rotate(5deg);
-    }
-
-    100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-  }
-
-  .floating-slow {
-    animation: float-slow 8s ease-in-out infinite;
-  }
-
-  @keyframes float-slow {
-    0% {
-      transform: translate(0px, 0px);
-    }
-
-    33% {
-      transform: translate(10px, -15px);
-    }
-
-    66% {
-      transform: translate(-10px, 10px);
-    }
-
-    100% {
-      transform: translate(0px, 0px);
-    }
-  }
+.animate-delay-500 {
+  animation-delay: 500ms;
 }

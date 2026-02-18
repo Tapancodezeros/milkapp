@@ -408,26 +408,28 @@ const CustomerDashboard = () => {
 
     if (loading && vendors.length === 0) {
         return (
-            <div className="flex flex-col justify-center items-center h-screen bg-[#F8FAFC]">
-                <div className="relative">
-                    <div className="w-24 h-24 border-4 border-blue-100 rounded-full animate-spin border-t-blue-600"></div>
+            <div className="flex flex-col justify-center items-center h-screen bg-background relative overflow-hidden transition-colors duration-300">
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none"></div>
+                <div className="relative z-10">
+                    <div className="w-20 h-20 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="animate-pulse text-blue-600 w-8 h-8" />
+                        <Loader2 className="animate-pulse text-primary-500 w-8 h-8" />
                     </div>
                 </div>
-                <div className="mt-8 text-center">
-                    <p className="font-black text-slate-900 uppercase tracking-[0.4em] text-sm animate-pulse">Loading Dashboard</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Getting latest data...</p>
+                <div className="mt-8 text-center relative z-10">
+                    <p className="font-display font-bold text-slate-900 dark:text-white uppercase tracking-widest text-sm animate-pulse">Loading Dashboard</p>
+                    <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Getting latest data...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative overflow-x-hidden transition-colors duration-500">
+        <div className="min-h-screen bg-background text-slate-900 dark:text-slate-200 font-sans selection:bg-primary-500/30 selection:text-white relative overflow-x-hidden transition-colors duration-300">
             {/* Background Decorations */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50/50 dark:bg-blue-900/10 rounded-full blur-3xl -mr-64 -mt-64"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-3xl -ml-64 -mb-64"></div>
+            <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none z-0"></div>
+            <div className="fixed top-0 left-1/4 w-[800px] h-[800px] bg-primary-100/50 dark:bg-primary-900/20 rounded-full blur-[120px] -translate-y-1/2 pointer-events-none animate-pulse-slow z-0"></div>
+            <div className="fixed bottom-0 right-0 w-[600px] h-[600px] bg-accent-100/50 dark:bg-accent-900/10 rounded-full blur-[100px] translate-y-1/3 pointer-events-none z-0"></div>
 
             <Header
                 user={user}
@@ -435,14 +437,14 @@ const CustomerDashboard = () => {
                 onLogout={handleLogout}
                 onSettings={() => setShowProfile(true)}
                 extra={walletBalance < 100 && (
-                    <div className="hidden md:flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-900/30 animate-pulse">
-                        <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" />
-                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Low Balance: ₹{walletBalance}</span>
+                    <div className="hidden md:flex items-center gap-2 bg-warning/10 px-4 py-2 rounded-xl border border-warning/20 animate-pulse">
+                        <TriangleAlert size={14} className="text-warning" />
+                        <span className="text-[10px] font-bold text-warning uppercase tracking-wider">Low Balance: ₹{walletBalance}</span>
                     </div>
                 )}
             />
 
-            <main className="relative z-10 flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-20">
+            <main className="relative z-10 flex-1 p-6 pt-28 lg:p-12 lg:pt-32 max-w-7xl mx-auto w-full space-y-20">
 
                 <CustomerHero
                     walletBalance={typeof walletBalance === 'number' ? walletBalance : 0}
@@ -466,17 +468,17 @@ const CustomerDashboard = () => {
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+                            className="p-3 glass-card rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
                         >
                             <ArrowLeft size={20} />
                         </button>
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
                             Page {currentPage} of {totalPages}
                         </span>
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+                            className="p-3 glass-card rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
                         >
                             <ArrowRight size={20} />
                         </button>
@@ -492,20 +494,20 @@ const CustomerDashboard = () => {
                         />
                     </div>
 
-                    <div className="lg:col-span-4 space-y-10 group/sub">
-                        <div className="flex justify-between items-end px-2 border-b-2 border-slate-100 dark:border-slate-800 pb-4">
+                    <div className="lg:col-span-4 space-y-6 group/sub">
+                        <div className="flex justify-between items-end px-2 border-b border-white/5 pb-4">
                             <div>
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-indigo-600 dark:text-indigo-400 shadow-sm"><Calendar size={22} strokeWidth={2.5} /></div>
+                                <h2 className="text-2xl font-display font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                                    <div className="p-2 bg-primary-500/10 rounded-xl text-primary-600 dark:text-primary-400 border border-primary-500/20"><Calendar size={18} strokeWidth={2.5} /></div>
                                     Subscriptions
                                 </h2>
-                                <p className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mt-2 ml-1">Recurring Orders</p>
+                                <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mt-2 ml-1">Recurring Orders</p>
                             </div>
-                            <div className="bg-indigo-600 dark:bg-indigo-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg shadow-indigo-100 dark:shadow-none">
+                            <div className="bg-primary-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-primary-500/20">
                                 {subscriptions.length}
                             </div>
                         </div>
-                        <div className="space-y-8 max-h-[1000px] overflow-y-auto custom-scrollbar pr-2">
+                        <div className="space-y-6 max-h-[800px] overflow-y-auto custom-scrollbar pr-2">
                             {subscriptions.map(sub => (
                                 <SubscriptionItem
                                     key={sub.id}
@@ -516,35 +518,37 @@ const CustomerDashboard = () => {
                                 />
                             ))}
                             {subscriptions.length === 0 && (
-                                <div className="p-20 bg-white dark:bg-slate-900/30 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 text-center shadow-[0_20px_50px_rgba(0,0,0,0.01)] dark:shadow-none group-hover/sub:border-indigo-100 dark:group-hover/sub:border-indigo-900 transition-colors duration-500">
-                                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200 dark:text-slate-700"><Calendar size={32} /></div>
-                                    <p className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">No Subscriptions</p>
-                                    <p className="text-xs font-bold text-slate-300 dark:text-slate-700 mt-2">Subscribe to a vendor to start</p>
+                                <div className="p-16 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-4">
+                                    <div className="w-16 h-16 bg-white dark:bg-white/5 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 shadow-sm dark:shadow-none border border-slate-100 dark:border-white/5"><Calendar size={28} /></div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">No Subscriptions</p>
+                                        <p className="text-xs font-medium text-slate-400 mt-1">Subscribe to a vendor to start</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-8">
+                <div className="pt-8 space-y-8">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white">Transaction History</h2>
+                        <h2 className="text-2xl font-display font-bold text-slate-900 dark:text-white">Transaction History</h2>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={handleExportAllTransactions}
-                                className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 shadow-sm transition-all"
+                                className="p-2.5 bg-white/50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all shadow-sm dark:shadow-none"
                                 title="Export All Transactions"
                             >
                                 <Download size={18} />
                             </button>
-                            <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl border border-slate-200 dark:border-white/5">
                                 {['all', 'delivered', 'completed'].map(f => (
                                     <button
                                         key={f}
                                         onClick={() => setTxFilter(f)}
-                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${txFilter === f
-                                            ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-md'
-                                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                                        className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${txFilter === f
+                                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                                             }`}
                                     >
                                         {f}
@@ -571,19 +575,19 @@ const CustomerDashboard = () => {
                 onClose={() => setShowTopup(false)}
                 title="Add Money"
             >
-                <form onSubmit={handleTopup} className="space-y-10">
-                    <div className="space-y-6">
+                <form onSubmit={handleTopup} className="space-y-8">
+                    <div className="space-y-4">
                         <div className="flex justify-between items-end px-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
-                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Max Total: 50,000</span>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">Max Total: 50,000</span>
                         </div>
                         <div className="relative group">
-                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-300 dark:text-slate-700 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors">₹</div>
+                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-400 group-focus-within:text-primary-500 transition-colors">₹</div>
                             <input
                                 type="number"
                                 value={topupAmount}
                                 onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-10 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-5xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
+                                className="glass-input w-full p-8 pl-14 rounded-[2rem] font-display font-bold text-4xl text-slate-900 dark:text-white outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-inner"
                                 placeholder="0.00"
                                 autoFocus
                             />
@@ -594,7 +598,7 @@ const CustomerDashboard = () => {
                                     key={amt}
                                     type="button"
                                     onClick={() => setTopupAmount(amt.toString())}
-                                    className="py-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/50 rounded-2xl text-[11px] font-black text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95 shadow-sm"
+                                    className="py-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all active:scale-95 shadow-sm"
                                 >
                                     +₹{amt}
                                 </button>
@@ -604,12 +608,9 @@ const CustomerDashboard = () => {
                     <button
                         type="submit"
                         disabled={actionLoading}
-                        className="w-full bg-slate-900 dark:bg-blue-600 group relative overflow-hidden text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
+                        className="w-full bg-primary-600 hover:bg-primary-500 text-white p-5 rounded-2xl font-bold text-xs uppercase tracking-[0.3em] transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-lg shadow-primary-500/20 active:scale-95"
                     >
-                        <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                        <span className="relative z-10 flex items-center gap-3">
-                            {actionLoading ? <Loader2 className="animate-spin" /> : <>Add to Wallet <Plus size={18} strokeWidth={3} /></>}
-                        </span>
+                        {actionLoading ? <Loader2 className="animate-spin" /> : <>Add to Wallet <Plus size={18} strokeWidth={3} /></>}
                     </button>
                 </form>
             </Modal>
@@ -619,19 +620,19 @@ const CustomerDashboard = () => {
                 onClose={() => setShowWithdraw(false)}
                 title="Withdraw Money"
             >
-                <form onSubmit={handleWithdraw} className="space-y-10">
-                    <div className="space-y-6">
+                <form onSubmit={handleWithdraw} className="space-y-8">
+                    <div className="space-y-4">
                         <div className="flex justify-between items-end px-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
-                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Available: ₹{walletBalance}</span>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">Available: ₹{walletBalance}</span>
                         </div>
                         <div className="relative group">
-                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-300 dark:text-slate-700 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors">₹</div>
+                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-400 group-focus-within:text-primary-500 transition-colors">₹</div>
                             <input
                                 type="number"
                                 value={topupAmount}
                                 onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-10 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-5xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
+                                className="glass-input w-full p-8 pl-14 rounded-[2rem] font-display font-bold text-4xl text-slate-900 dark:text-white outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-inner"
                                 placeholder="0.00"
                                 autoFocus
                             />
@@ -640,12 +641,9 @@ const CustomerDashboard = () => {
                     <button
                         type="submit"
                         disabled={actionLoading}
-                        className="w-full bg-slate-900 dark:bg-blue-600 group relative overflow-hidden text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
+                        className="w-full bg-primary-600 hover:bg-primary-500 text-white p-5 rounded-2xl font-bold text-xs uppercase tracking-[0.3em] transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-lg shadow-primary-500/20 active:scale-95"
                     >
-                        <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                        <span className="relative z-10 flex items-center gap-3">
-                            {actionLoading ? <Loader2 className="animate-spin" /> : <>Withdraw Balance <ArrowRight size={18} strokeWidth={3} /></>}
-                        </span>
+                        {actionLoading ? <Loader2 className="animate-spin" /> : <>Withdraw Balance <ArrowRight size={18} strokeWidth={3} /></>}
                     </button>
                 </form>
             </Modal>
@@ -655,67 +653,64 @@ const CustomerDashboard = () => {
                 onClose={() => { setSelectedVendor(null); setAction(null); }}
                 title={action === 'buy' ? 'Buy Milk' : 'Subscribe'}
             >
-                <div className="mb-10 p-8 bg-blue-50/50 dark:bg-blue-900/20 rounded-[2.5rem] border border-blue-100/50 dark:border-blue-900/30 flex items-center justify-between shadow-inner transition-colors duration-500">
+                <div className="mb-8 p-6 bg-primary-50/50 dark:bg-primary-500/10 rounded-[2rem] border border-primary-100 dark:border-primary-500/30 flex items-center justify-between shadow-inner">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-[1.2rem] flex items-center justify-center font-black text-blue-600 dark:text-blue-400 shadow-lg border border-white dark:border-slate-700 translate-x-1 group hover:scale-110 transition-transform">{selectedVendor?.name ? selectedVendor.name[0] : ''}</div>
+                        <div className="w-12 h-12 bg-white dark:bg-surface rounded-xl flex items-center justify-center font-bold text-primary-500 dark:text-primary-400 shadow-sm border border-slate-100 dark:border-white/5">{selectedVendor?.name ? selectedVendor.name[0] : ''}</div>
                         <div>
-                            <p className="text-[10px] font-black text-blue-400 dark:text-blue-500 uppercase tracking-[0.3em] leading-tight mb-1">Vendor</p>
-                            <h4 className="font-black text-slate-900 dark:text-white text-lg">{selectedVendor?.name}</h4>
+                            <p className="text-[10px] font-bold text-primary-500 dark:text-primary-300 uppercase tracking-[0.3em] leading-tight mb-1">Vendor</p>
+                            <h4 className="font-display font-bold text-slate-900 dark:text-white text-lg">{selectedVendor?.name}</h4>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-black text-blue-400 dark:text-blue-500 uppercase tracking-[0.3em] leading-tight mb-1">Rate</p>
-                        <p className="font-black text-slate-900 dark:text-white text-lg">₹{selectedVendor?.rate}<span className="text-xs text-slate-400 dark:text-slate-600">/L</span></p>
+                        <p className="text-[10px] font-bold text-primary-500 dark:text-primary-300 uppercase tracking-[0.3em] leading-tight mb-1">Rate</p>
+                        <p className="font-display font-bold text-slate-900 dark:text-white text-lg">₹{selectedVendor?.rate}<span className="text-xs text-slate-500 font-sans ml-0.5">/L</span></p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmitAction} className="space-y-10">
-                    <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] ml-4">Quantity (Liters)</label>
+                <form onSubmit={handleSubmitAction} className="space-y-8">
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] ml-4">Quantity (Liters)</label>
                         <div className="relative group">
                             <input
                                 type="number"
                                 value={form.quantity}
                                 onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-8 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-4xl text-slate-900 dark:text-white shadow-inner"
+                                className="glass-input w-full p-6 pl-8 rounded-[2rem] font-display font-bold text-3xl text-slate-900 dark:text-white outline-none focus:border-primary-500 transition-all shadow-inner"
                                 placeholder="0.0"
                                 autoFocus
                             />
-                            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300 dark:text-slate-700">L</div>
+                            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">L</div>
                         </div>
                     </div>
 
                     {action === 'subscribe' && (
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] ml-4">Duration</label>
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] ml-4">Duration</label>
                             <div className="grid grid-cols-1 gap-4">
                                 <select
                                     value={form.duration}
                                     onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-6 rounded-[2rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-sm text-slate-700 dark:text-slate-300 appearance-none cursor-pointer shadow-inner"
+                                    className="glass-input w-full p-5 rounded-2xl font-bold text-sm text-slate-600 dark:text-slate-300 appearance-none cursor-pointer shadow-inner bg-slate-50 dark:bg-surface"
                                 >
-                                    <option value="7_days" className="dark:bg-slate-900">7 Days</option>
-                                    <option value="1_month" className="dark:bg-slate-900">30 Days</option>
-                                    <option value="3_months" className="dark:bg-slate-900">90 Days</option>
+                                    <option value="7_days" className="bg-white dark:bg-surface text-slate-900 dark:text-slate-300">7 Days</option>
+                                    <option value="1_month" className="bg-white dark:bg-surface text-slate-900 dark:text-slate-300">30 Days</option>
+                                    <option value="3_months" className="bg-white dark:bg-surface text-slate-900 dark:text-slate-300">90 Days</option>
                                 </select>
                             </div>
                         </div>
                     )}
 
-
-
-                    <div className="pt-4">
-                        <div className="bg-slate-900/5 dark:bg-slate-800/20 p-6 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 mb-8 flex items-center justify-between">
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Total</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white">₹{(form.quantity * (selectedVendor?.rate || 0)).toFixed(2)}</p>
+                    <div className="pt-2">
+                        <div className="bg-slate-50 dark:bg-white/5 p-5 rounded-[2rem] border border-slate-100 dark:border-white/5 mb-6 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Total</p>
+                            <p className="text-2xl font-display font-bold text-slate-900 dark:text-white">₹{(form.quantity * (selectedVendor?.rate || 0)).toFixed(2)}</p>
                         </div>
                         <button
                             type="submit"
                             disabled={actionLoading || !form.quantity}
-                            className="w-full group relative overflow-hidden bg-slate-900 dark:bg-blue-600 text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
+                            className="w-full bg-primary-600 hover:bg-primary-500 text-white p-5 rounded-2xl font-bold text-xs uppercase tracking-[0.3em] transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-lg shadow-primary-500/20 active:scale-95"
                         >
-                            <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                            {actionLoading ? <Loader2 className="animate-spin" /> : <span className="relative z-10 flex items-center gap-3">Confirm Order <ArrowRight size={20} strokeWidth={3} /></span>}
+                            {actionLoading ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-3">Confirm Order <ArrowRight size={18} strokeWidth={3} /></span>}
                         </button>
                     </div>
                 </form>
@@ -728,71 +723,71 @@ const CustomerDashboard = () => {
                 title="Receipt"
             >
                 {selectedReceipt && (
-                    <div className="space-y-8 animate-fadeIn">
-                        <div className="text-center space-y-2 border-b-2 border-dashed border-slate-100 dark:border-slate-800 pb-8">
-                            <div className="w-16 h-16 bg-slate-900 dark:bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3 transition-transform hover:rotate-0 duration-500">
+                    <div className="space-y-6 animate-fade-in-up">
+                        <div className="text-center space-y-2 border-b border-slate-100 dark:border-white/5 pb-6">
+                            <div className="w-16 h-16 bg-gradient-to-tr from-primary-600 to-accent-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary-500/20">
                                 <Plus size={32} className="text-white" />
                             </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Milk Receipt</h3>
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">Verified Transaction</p>
+                            <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white uppercase tracking-wider">Milk Receipt</h3>
+                            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">Verified Transaction</p>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-1">Transaction ID</p>
-                                    <p className="text-xs font-black text-slate-900 dark:text-white tracking-widest font-mono">#{String(selectedReceipt.id).slice(-8).toUpperCase()}</p>
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Transaction ID</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-widest font-mono">#{String(selectedReceipt.id).slice(-8).toUpperCase()}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-1">Date</p>
-                                    <p className="text-xs font-black text-slate-900 dark:text-white">{selectedReceipt.date}</p>
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Date</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedReceipt.date}</p>
                                 </div>
                             </div>
 
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-4 shadow-inner">
+                            <div className="bg-slate-50 dark:bg-white/5 p-5 rounded-[2rem] border border-slate-100 dark:border-white/5 space-y-4 shadow-inner">
                                 <div className="flex justify-between items-center group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-white dark:bg-slate-700 rounded-lg flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400 border border-slate-100 dark:border-slate-600 shadow-sm transition-transform group-hover:scale-110">{selectedReceipt.Vendor?.name ? selectedReceipt.Vendor.name[0] : 'V'}</div>
-                                        <p className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">{selectedReceipt.Vendor?.name}</p>
+                                        <div className="w-8 h-8 bg-white dark:bg-surface rounded-lg flex items-center justify-center text-[10px] font-bold text-primary-500 dark:text-primary-400 border border-slate-100 dark:border-white/10 shadow-sm">{selectedReceipt.Vendor?.name ? selectedReceipt.Vendor.name[0] : 'V'}</div>
+                                        <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{selectedReceipt.Vendor?.name}</p>
                                     </div>
-                                    <p className="text-[11px] font-black text-slate-400 dark:text-slate-500">Authorized Seller</p>
+                                    <p className="text-[10px] font-bold text-slate-500">Authorized Seller</p>
                                 </div>
-                                <div className="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-2">
+                                <div className="border-t border-slate-200 dark:border-white/5 pt-4 space-y-2">
                                     <div className="flex justify-between items-center px-1">
-                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Item</p>
-                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Qty & Rate</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Item</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Qty & Rate</p>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                                        <p className="text-xs font-black text-slate-900 dark:text-white">Milk ({selectedReceipt.type === 'subscription' ? 'Subscription' : 'One-time'})</p>
-                                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{selectedReceipt.quantity}L @ ₹{(selectedReceipt.amount / selectedReceipt.quantity).toFixed(2)}</p>
+                                    <div className="flex justify-between items-center bg-white dark:bg-black/20 p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
+                                        <p className="text-xs font-bold text-slate-900 dark:text-white">Milk ({selectedReceipt.type === 'subscription' ? 'Subscription' : 'One-time'})</p>
+                                        <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tighter">{selectedReceipt.quantity}L @ ₹{(selectedReceipt.amount / selectedReceipt.quantity).toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center px-4 bg-blue-50/30 dark:bg-blue-900/10 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-900/20">
-                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">Total Amount</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">₹{parseFloat(selectedReceipt.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                            <div className="flex justify-between items-center px-6 py-5 bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 rounded-[2rem] border border-primary-100 dark:border-primary-500/20">
+                                <p className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em]">Total Amount</p>
+                                <p className="text-3xl font-display font-bold text-slate-900 dark:text-white tabular-nums">₹{parseFloat(selectedReceipt.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                             </div>
                         </div>
 
-                        <div className="py-4 px-6 bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between shadow-sm">
+                        <div className="py-4 px-6 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                                <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Delivered & Verified</p>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-glow"></div>
+                                <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Delivered & Verified</p>
                             </div>
-                            <span className="text-[8px] font-black text-emerald-600/50 dark:text-emerald-400/50 uppercase tracking-[0.2em]">SECURE TRANSACTION</span>
+                            <span className="text-[8px] font-bold text-emerald-600/50 dark:text-emerald-400/50 uppercase tracking-[0.2em]">SECURE TRANSACTION</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="grid grid-cols-2 gap-4 pt-2">
                             <button
                                 onClick={() => window.print()}
-                                className="bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 p-5 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700 shadow-sm active:scale-95"
+                                className="bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 p-4 rounded-2xl text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-white/5 active:scale-95"
                             >
                                 <Printer size={16} /> Print
                             </button>
                             <button
                                 onClick={handleExportReceipt}
-                                className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 p-5 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 dark:shadow-none flex items-center justify-center gap-2 active:scale-95"
+                                className="bg-primary-600 hover:bg-primary-500 p-4 rounded-2xl text-[10px] font-bold text-white uppercase tracking-widest transition-all shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2 active:scale-95"
                             >
                                 <Download size={16} /> Export
                             </button>
@@ -801,15 +796,14 @@ const CustomerDashboard = () => {
                 )}
             </Modal>
 
-            <footer className="relative z-10 bg-white dark:bg-slate-950 border-t border-slate-200/60 dark:border-slate-800 p-12 text-center transition-colors duration-500">
+            <footer className="relative z-10 p-12 text-center text-slate-500 border-t border-slate-200 dark:border-white/5">
                 <div className="max-w-7xl mx-auto flex flex-col items-center gap-6">
-                    <div className="flex items-center gap-4 text-slate-300 dark:text-slate-800">
-                        <div className="h-[1px] w-12 bg-slate-100 dark:bg-slate-900"></div>
-                        <div className="w-2 h-2 rounded-full bg-blue-500 shadow-lg shadow-blue-200 dark:shadow-none animate-pulse"></div>
-                        <div className="h-[1px] w-12 bg-slate-100 dark:bg-slate-900"></div>
+                    <div className="flex items-center gap-4 text-slate-300 dark:text-slate-700">
+                        <div className="h-[1px] w-12 bg-slate-200 dark:bg-white/10"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-lg shadow-primary-500/50 animate-pulse"></div>
+                        <div className="h-[1px] w-12 bg-slate-200 dark:bg-white/10"></div>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.5em]">Milk Supply Management v4.0 • Secured</p>
-                    <p className="text-[9px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-widest mt-1">© 2026 DairyHub. All Rights Reserved.</p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-[0.5em]">Milk Supply Management v4.0 • Secured</p>
                 </div>
             </footer>
 
