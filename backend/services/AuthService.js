@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { UserRole } = require('../utils/constants');
+const AppError = require('../utils/appError');
 
 const SECRET_KEY = process.env.SECRET_KEY || "supersecretkey";
 
@@ -18,61 +19,84 @@ class AuthService {
 
     async register(data) {
         const { name, phone, email, password, role } = data;
+        const normalizedEmail = email.trim().toLowerCase();
         const hashedPassword = await bcrypt.hash(password, 10);
         const Model = this.getModel(role);
 
-        const existingUser = await Model.findOne({ where: { email } });
+        const existingUser = await Model.findOne({
+            where: {
+                [Op.or]: [
+                    { email: normalizedEmail },
+                    { phone },
+                    { name }
+                ]
+            }
+        });
         if (existingUser) {
-            throw new Error("Email already registered");
+            if (existingUser.email === normalizedEmail) {
+                throw new AppError("Email already registered", 409);
+            }
+            if (existingUser.phone === phone) {
+                throw new AppError("Phone number already registered", 409);
+            }
+            throw new AppError("Name already registered", 409);
         }
 
         await Model.create({
             name,
             phone,
-            email,
+            email: normalizedEmail,
             password: hashedPassword
         });
 
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const welcomeLink = `${frontendUrl}/forgot-password`;
-
-        console.log(`[WELCOME] User ${email} registered. Login at: ${frontendUrl}`);
+        console.log(`[WELCOME] User ${normalizedEmail} registered. Login at: ${frontendUrl}`);
         return { message: "Registration successful", loginLink: frontendUrl };
     }
 
     async login(data) {
         const { identifier, password, role } = data;
         const Model = this.getModel(role);
+        const normalizedIdentifier = identifier.trim();
 
         const user = await Model.findOne({
             where: {
                 [Op.or]: [
-                    { email: identifier },
-                    { name: identifier }
+                    { email: normalizedIdentifier.toLowerCase() },
+                    { phone: normalizedIdentifier },
+                    { name: normalizedIdentifier }
                 ]
             }
         });
 
         if (!user) {
-            throw new Error("Invalid identifier or password");
+            throw new AppError("Invalid identifier or password", 401);
         }
 
         const validPass = await bcrypt.compare(password, user.password);
         if (!validPass) {
-            throw new Error("Invalid identifier or password");
+            throw new AppError("Invalid identifier or password", 401);
         }
 
         const token = jwt.sign({ id: user.id, role }, SECRET_KEY, { expiresIn: '1h' });
-        return { token, user: { id: user.id, name: user.name, role } };
+        return {
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role
+            }
+        };
     }
 
     async forgotPassword(data) {
         const { email, role } = data;
         const Model = this.getModel(role);
 
-        const user = await Model.findOne({ where: { email } });
+        const user = await Model.findOne({ where: { email: email.trim().toLowerCase() } });
         if (!user) {
-            throw new Error("User with this email not found");
+            throw new AppError("User with this email not found", 404);
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -99,7 +123,7 @@ class AuthService {
         });
 
         if (!user) {
-            throw new Error("Invalid or expired reset token");
+            throw new AppError("Invalid or expired reset token", 400);
         }
 
         user.password = await bcrypt.hash(newPassword, 10);

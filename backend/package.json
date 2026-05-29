@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "seed": "node seedData.js",
+    "seed:reset": "node seedData.js --reset",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,55 +1,114 @@
-const { Transaction, Customer, Vendor } = require('../models');
+const { Transaction, Customer, Vendor, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { UserRole } = require('../utils/constants');
+const AppError = require('../utils/appError');
 
 class TransactionService {
     async buy(customerId, vendorId, quantity, type = 'purchase') {
-        const vendor = await Vendor.findByPk(vendorId);
-        if (!vendor) {
-            throw new Error("Vendor not found");
-        }
+        const purchaseQuantity = parseFloat(quantity);
 
-        if (!vendor.isAvailable) {
-            throw new Error("Vendor is currently not available");
-        }
+        return sequelize.transaction(async (dbTransaction) => {
+            const vendor = await Vendor.findByPk(vendorId, {
+                transaction: dbTransaction,
+                lock: dbTransaction.LOCK.UPDATE
+            });
 
-        if (vendor.availableMilk < quantity) {
-            throw new Error(`Not enough milk. Available: ${vendor.availableMilk} L`);
-        }
+            if (!vendor) {
+                throw new AppError("Vendor not found", 404);
+            }
 
-        const rate = vendor.rate;
-        const amount = quantity * rate;
+            if (!vendor.isAvailable) {
+                throw new AppError("Vendor is currently not available", 409);
+            }
 
-        const customer = await Customer.findByPk(customerId);
-        if (!customer || customer.walletBalance < amount) {
-            throw new Error("Insufficient wallet balance. Please top up.");
-        }
+            if (parseFloat(vendor.availableMilk) < purchaseQuantity) {
+                throw new AppError(`Not enough milk. Available: ${vendor.availableMilk} L`);
+            }
 
-        const transaction = await Transaction.create({
-            customerId,
-            vendorId,
-            quantity,
-            amount,
-            status: 'completed',
-            type
+            const amount = purchaseQuantity * vendor.rate;
+
+            const customer = await Customer.findByPk(customerId, {
+                transaction: dbTransaction,
+                lock: dbTransaction.LOCK.UPDATE
+            });
+
+            if (!customer) {
+                throw new AppError("Customer not found", 404);
+            }
+
+            if (parseFloat(customer.walletBalance) < amount) {
+                throw new AppError("Insufficient wallet balance. Please top up.");
+            }
+
+            const transaction = await Transaction.create({
+                customerId,
+                vendorId,
+                quantity: purchaseQuantity,
+                amount,
+                status: 'completed',
+                type
+            }, { transaction: dbTransaction });
+
+            customer.walletBalance -= amount;
+            await customer.save({ transaction: dbTransaction });
+
+            vendor.availableMilk -= purchaseQuantity;
+            await vendor.save({ transaction: dbTransaction });
+
+            return transaction;
         });
-
-        customer.walletBalance -= amount;
-        await customer.save();
-
-        vendor.availableMilk -= quantity;
-        await vendor.save();
-
-        return transaction;
     }
 
     async getTransactions(userId, role, options = {}) {
-        const { page = 1, limit = 10, paginate = false } = options;
+        const {
+            page = 1,
+            limit = 10,
+            paginate = false,
+            status,
+            type,
+            deliveryStatus,
+            search,
+            dateFrom,
+            dateTo
+        } = options;
 
         const where = role === UserRole.VENDOR ? { vendorId: userId } : { customerId: userId };
         const include = role === UserRole.VENDOR
-            ? [{ model: Customer, attributes: ['name', 'phone'] }]
-            : [{ model: Vendor, attributes: ['name', 'phone'] }];
+            ? [{ model: Customer, attributes: ['name', 'phone', 'email'] }]
+            : [{ model: Vendor, attributes: ['name', 'phone', 'email'] }];
+
+        if (status && status !== 'all') {
+            where.status = status;
+        }
+
+        if (type && type !== 'all') {
+            where.type = type;
+        }
+
+        if (deliveryStatus && deliveryStatus !== 'all') {
+            where.deliveryStatus = deliveryStatus;
+        }
+
+        if (dateFrom || dateTo) {
+            where.date = {};
+
+            if (dateFrom) {
+                where.date[Op.gte] = dateFrom;
+            }
+
+            if (dateTo) {
+                where.date[Op.lte] = dateTo;
+            }
+        }
+
+        if (search) {
+            const searchScope = role === UserRole.VENDOR ? 'Customer' : 'Vendor';
+            where[Op.or] = [
+                { [`$${searchScope}.name$`]: { [Op.iLike]: `%${search}%` } },
+                { [`$${searchScope}.phone$`]: { [Op.iLike]: `%${search}%` } },
+                { [`$${searchScope}.email$`]: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
 
         if (paginate) {
             const offset = (page - 1) * limit;
@@ -79,14 +138,18 @@ class TransactionService {
     async verifyDelivery(transactionId, status, userId) {
         const transaction = await Transaction.findByPk(transactionId);
         if (!transaction) {
-            throw new Error("Transaction not found");
+            throw new AppError("Transaction not found", 404);
         }
         if (transaction.customerId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
 
         if (!['delivered', 'not_delivered'].includes(status)) {
-            throw new Error("Invalid status. Use 'delivered' or 'not_delivered'.");
+            throw new AppError("Invalid status. Use 'delivered' or 'not_delivered'.");
+        }
+
+        if (transaction.status !== 'completed') {
+            throw new AppError("Complete payment before verifying delivery", 409);
         }
 
         transaction.deliveryStatus = status;
@@ -100,14 +163,14 @@ class TransactionService {
     async updateDelivery(transactionId, status, vendorId) {
         const transaction = await Transaction.findByPk(transactionId);
         if (!transaction) {
-            throw new Error("Transaction not found");
+            throw new AppError("Transaction not found", 404);
         }
         if (transaction.vendorId !== vendorId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
 
         if (!['delivered', 'not_delivered'].includes(status)) {
-            throw new Error("Invalid status. Use 'delivered' or 'not_delivered'.");
+            throw new AppError("Invalid status. Use 'delivered' or 'not_delivered'.");
         }
 
         transaction.deliveryStatus = status;
@@ -116,29 +179,43 @@ class TransactionService {
     }
 
     async pay(transactionId, customerId) {
-        const transaction = await Transaction.findByPk(transactionId);
-        if (!transaction) {
-            throw new Error("Transaction not found");
-        }
-        if (transaction.customerId !== customerId) {
-            throw new Error("Unauthorized");
-        }
-        if (transaction.status !== 'pending') {
-            throw new Error("Transaction is not pending");
-        }
+        return sequelize.transaction(async (dbTransaction) => {
+            const transaction = await Transaction.findByPk(transactionId, {
+                transaction: dbTransaction,
+                lock: dbTransaction.LOCK.UPDATE
+            });
 
-        const customer = await Customer.findByPk(customerId);
-        if (customer.walletBalance < transaction.amount) {
-            throw new Error("Insufficient wallet balance. Please top up.");
-        }
+            if (!transaction) {
+                throw new AppError("Transaction not found", 404);
+            }
+            if (transaction.customerId !== customerId) {
+                throw new AppError("Unauthorized", 403);
+            }
+            if (transaction.status !== 'pending') {
+                throw new AppError("Transaction is not pending", 409);
+            }
 
-        customer.walletBalance -= transaction.amount;
-        await customer.save();
+            const customer = await Customer.findByPk(customerId, {
+                transaction: dbTransaction,
+                lock: dbTransaction.LOCK.UPDATE
+            });
 
-        transaction.status = 'completed';
-        await transaction.save();
+            if (!customer) {
+                throw new AppError("Customer not found", 404);
+            }
 
-        return { balance: customer.walletBalance };
+            if (parseFloat(customer.walletBalance) < parseFloat(transaction.amount)) {
+                throw new AppError("Insufficient wallet balance. Please top up.");
+            }
+
+            customer.walletBalance -= transaction.amount;
+            await customer.save({ transaction: dbTransaction });
+
+            transaction.status = 'completed';
+            await transaction.save({ transaction: dbTransaction });
+
+            return { balance: customer.walletBalance };
+        });
     }
 
     async getBalance(userId, role) {

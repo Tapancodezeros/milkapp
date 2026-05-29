@@ -5,6 +5,7 @@ const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
 const ApiResponse = require('../utils/apiResponse');
 const { UserRole } = require('../utils/constants');
+const handleRouteError = require('../utils/handleRouteError');
 
 // POST /api/subscribe
 router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, res) => {
@@ -14,7 +15,7 @@ router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, r
         const sub = await SubscriptionService.subscribe(req.user.id, vendorId, quantity, duration);
         return ApiResponse.success(res, "Subscribed successfully", sub, 201);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -24,7 +25,7 @@ router.get('/subscriptions', authenticateToken, async (req, res) => {
         const subs = await SubscriptionService.getSubscriptions(req.user.id, req.user.role);
         return ApiResponse.success(res, "Subscriptions fetched", subs);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -34,7 +35,7 @@ router.put('/subscriptions/:id', authenticateToken, async (req, res) => {
         const sub = await SubscriptionService.updateSubscription(req.params.id, req.body, req.user.id, req.user.role);
         return ApiResponse.success(res, "Subscription updated", sub);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -44,7 +45,7 @@ router.put('/subscriptions/:id/toggle', authenticateToken, async (req, res) => {
         const sub = await SubscriptionService.toggleStatus(req.params.id, req.user.id);
         return ApiResponse.success(res, `Subscription ${sub.status}`, sub);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -54,7 +55,7 @@ router.put('/subscriptions/:id/cancel', authenticateToken, async (req, res) => {
         const sub = await SubscriptionService.cancel(req.params.id, req.user.id);
         return ApiResponse.success(res, "Subscription cancelled", sub);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -64,7 +65,7 @@ router.delete('/subscriptions/:id', authenticateToken, async (req, res) => {
         const sub = await SubscriptionService.delete(req.params.id, req.user.id);
         return ApiResponse.success(res, "Subscription deleted", sub);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 

@@ -6,6 +6,7 @@ const roleAuth = require('../middleware/roleAuth');
 const { UserRole } = require('../utils/constants');
 const ApiResponse = require('../utils/apiResponse');
 const { Op } = require('sequelize');
+const handleRouteError = require('../utils/handleRouteError');
 
 // Protect all admin routes
 router.use(authenticateToken);
@@ -62,7 +63,7 @@ router.get('/overview', async (req, res) => {
             recentTransactions
         });
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -86,7 +87,7 @@ router.get('/customers', async (req, res) => {
         });
         return ApiResponse.success(res, "Customers fetched successfully", customers);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -109,7 +110,7 @@ router.get('/vendors', async (req, res) => {
         });
         return ApiResponse.success(res, "Vendors fetched successfully", vendors);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -140,7 +141,7 @@ router.get('/transactions', async (req, res) => {
         });
         return ApiResponse.success(res, "Transactions fetched successfully", transactions);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -155,7 +156,7 @@ router.get('/subscriptions', async (req, res) => {
         });
         return ApiResponse.success(res, "Subscriptions fetched successfully", subscriptions);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -173,7 +174,7 @@ router.delete('/user/:role/:id', async (req, res) => {
         await user.destroy();
         return ApiResponse.success(res, "User deleted successfully");
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -197,7 +198,7 @@ router.put('/user/:role/:id', async (req, res) => {
         await user.update(updateData);
         return ApiResponse.success(res, "User updated successfully", user);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -224,7 +225,7 @@ router.post('/user/:role/:id/reset-password', async (req, res) => {
         console.log(`[ADMIN TRIGGERED] Password reset link for ${user.email}: ${resetLink}`);
         return ApiResponse.success(res, "Password reset link generated", { resetLink, token });
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -268,7 +269,7 @@ router.post('/user/create', async (req, res) => {
 
         return ApiResponse.success(res, "User created successfully", userResponse);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 

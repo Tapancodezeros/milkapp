@@ -15,7 +15,9 @@ import { toast } from 'react-hot-toast';
 
 import Header from '../components/shared/Header';
 import CustomerHero from '../components/customer/CustomerHero';
+import CustomerInsights from '../components/customer/CustomerInsights';
 import Marketplace from '../components/customer/Marketplace';
+import SavedVendorsPanel from '../components/customer/SavedVendorsPanel';
 import AnalyticsChart from '../components/vendor/AnalyticsChart';
 import SubscriptionItem from '../components/customer/SubscriptionItem';
 import CustomerTransactions from '../components/customer/CustomerTransactions';
@@ -24,6 +26,7 @@ import ProfileModal from '../components/shared/ProfileModal';
 import { API_BASE_URL } from '../api/config';
 
 const CustomerDashboard = () => {
+    const SAVED_VENDORS_KEY = 'milkapp_saved_vendors';
     const [vendors, setVendors] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -39,6 +42,16 @@ const CustomerDashboard = () => {
     const [showTopup, setShowTopup] = useState(false);
     const [showWithdraw, setShowWithdraw] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [marketFilters, setMarketFilters] = useState({
+        availableOnly: false,
+        sortBy: 'createdAt',
+        sortOrder: 'DESC',
+        minRate: '',
+        maxRate: ''
+    });
+    const [insights, setInsights] = useState(null);
+    const [insightsLoading, setInsightsLoading] = useState(true);
+    const [savedVendors, setSavedVendors] = useState([]);
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
@@ -101,20 +114,31 @@ const CustomerDashboard = () => {
 
     const filteredTransactions = transactions.filter(t => {
         if (txFilter === 'all') return true;
-        if (txFilter === 'pending') return t.status === 'ordered'; // Assuming 'ordered' is pending for delivery check
+        if (txFilter === 'pending') return t.status === 'pending';
         if (txFilter === 'completed') return t.status === 'completed';
-        if (txFilter === 'delivered') return t.status === 'delivered';
+        if (txFilter === 'delivered') return t.deliveryStatus === 'delivered';
+        if (txFilter === 'issues') return t.deliveryStatus === 'not_delivered';
         return true;
     });
 
     const token = sessionStorage.getItem('token');
     const user = JSON.parse(sessionStorage.getItem('user'));
+    const savedVendorIds = savedVendors.map((vendor) => vendor.id);
 
     const fetchMarketData = React.useCallback(async () => {
         try {
             const config = {
                 headers: { Authorization: `Bearer ${token}` },
-                params: { page: currentPage, limit: 3, search: searchQuery }
+                params: {
+                    page: currentPage,
+                    limit: 3,
+                    search: searchQuery,
+                    availableOnly: marketFilters.availableOnly,
+                    sortBy: marketFilters.sortBy,
+                    sortOrder: marketFilters.sortOrder,
+                    minRate: marketFilters.minRate,
+                    maxRate: marketFilters.maxRate
+                }
             };
             const vRes = await axios.get(`${API_BASE_URL}/vendors`, config);
             setVendors(vRes.data.data.vendors || []);
@@ -122,7 +146,20 @@ const CustomerDashboard = () => {
         } catch (err) {
             console.error("Market Fetch Error:", err);
         }
-    }, [token, currentPage, searchQuery]);
+    }, [token, currentPage, searchQuery, marketFilters]);
+
+    const fetchInsights = React.useCallback(async () => {
+        try {
+            setInsightsLoading(true);
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const res = await axios.get(`${API_BASE_URL}/customer/insights`, config);
+            setInsights(res.data.data);
+        } catch (err) {
+            console.error("Insights Fetch Error:", err);
+        } finally {
+            setInsightsLoading(false);
+        }
+    }, [token]);
 
     const fetchTransactions = React.useCallback(async () => {
         try {
@@ -204,7 +241,90 @@ const CustomerDashboard = () => {
         fetchTransactions();
         fetchSubscriptions();
         fetchProfile();
-    }, [fetchMarketData, fetchTransactions, fetchSubscriptions, fetchProfile, navigate, token, user?.role]);
+        fetchInsights();
+    }, [fetchInsights, fetchMarketData, fetchTransactions, fetchSubscriptions, fetchProfile, navigate, token, user?.role]);
+
+    useEffect(() => {
+        try {
+            const rawSavedVendors = localStorage.getItem(SAVED_VENDORS_KEY);
+            if (rawSavedVendors) {
+                setSavedVendors(JSON.parse(rawSavedVendors));
+            }
+        } catch (error) {
+            console.error('Saved vendors load error:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(SAVED_VENDORS_KEY, JSON.stringify(savedVendors));
+        } catch (error) {
+            console.error('Saved vendors persist error:', error);
+        }
+    }, [savedVendors]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, marketFilters.availableOnly, marketFilters.sortBy, marketFilters.sortOrder, marketFilters.minRate, marketFilters.maxRate]);
+
+    const scrollToMarketplace = () => {
+        document.getElementById('customer-marketplace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const openVendorAction = (vendor, nextAction) => {
+        setForm({ quantity: '', duration: '7_days' });
+        setSelectedVendor(vendor);
+        setAction(nextAction);
+    };
+
+    const createVendorSnapshot = (vendor) => ({
+        id: vendor.id,
+        name: vendor.name,
+        rate: vendor.rate,
+        availableMilk: vendor.availableMilk,
+        isAvailable: vendor.isAvailable
+    });
+
+    const toggleSavedVendor = (vendor) => {
+        const vendorSnapshot = createVendorSnapshot(vendor);
+        const alreadySaved = savedVendorIds.includes(vendor.id);
+
+        setSavedVendors((current) => {
+            if (alreadySaved) {
+                toast.success(`${vendor.name} removed from saved vendors`);
+                return current.filter((entry) => entry.id !== vendor.id);
+            }
+
+            toast.success(`${vendor.name} saved for quick access`);
+            return [vendorSnapshot, ...current.filter((entry) => entry.id !== vendor.id)].slice(0, 6);
+        });
+    };
+
+    const removeSavedVendor = (vendorId) => {
+        setSavedVendors((current) => current.filter((vendor) => vendor.id !== vendorId));
+    };
+
+    const handleInsightsAction = async () => {
+        const nextAction = insights?.nextAction;
+        if (!nextAction) return;
+
+        if (nextAction.type === 'topup') {
+            setShowTopup(true);
+            return;
+        }
+
+        if (nextAction.type === 'pay_pending' && nextAction.transactionId) {
+            await handlePayTransaction(nextAction.transactionId);
+            return;
+        }
+
+        if (nextAction.type === 'subscribe' && insights?.recommendedVendor) {
+            openVendorAction(insights.recommendedVendor, 'subscribe');
+            return;
+        }
+
+        scrollToMarketplace();
+    };
 
     const handleTopup = async (e) => {
         e.preventDefault();
@@ -224,6 +344,7 @@ const CustomerDashboard = () => {
             setShowTopup(false);
             setTopupAmount('');
             fetchProfile();
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Topup failed");
         } finally {
@@ -249,6 +370,7 @@ const CustomerDashboard = () => {
             setShowWithdraw(false);
             setTopupAmount('');
             fetchProfile();
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Withdrawal failed");
         } finally {
@@ -280,12 +402,14 @@ const CustomerDashboard = () => {
             toast.success(action === 'buy' ? "Purchase successful! Deducted from wallet." : "Subscription initialized!");
             setSelectedVendor(null);
             setAction(null);
+            setForm({ quantity: '', duration: '7_days' });
             if (action === 'buy') {
                 fetchProfile();
                 fetchTransactions();
             } else {
                 fetchSubscriptions();
             }
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Transaction failed");
         } finally {
@@ -303,6 +427,7 @@ const CustomerDashboard = () => {
             await axios.put(`${API_BASE_URL}/subscriptions/${id}/toggle`, {}, config);
             toast.success("Flow state updated");
             fetchSubscriptions();
+            fetchInsights();
         } catch (err) {
             toast.error("Toggle failed");
         }
@@ -318,6 +443,7 @@ const CustomerDashboard = () => {
             await axios.put(`${API_BASE_URL}/subscriptions/${id}/cancel`, {}, config);
             toast.success("Subscription terminated");
             fetchSubscriptions();
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Cancellation failed");
         }
@@ -333,6 +459,7 @@ const CustomerDashboard = () => {
             await axios.delete(`${API_BASE_URL}/subscriptions/${id}`, config);
             toast.success("Subscription record deleted");
             fetchSubscriptions();
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Deletion failed");
         }
@@ -359,6 +486,7 @@ const CustomerDashboard = () => {
             toast.success(res.data.message);
             fetchProfile();
             fetchTransactions();
+            fetchInsights();
         } catch (err) {
             toast.error(err.response?.data?.error || "Payment failed");
         }
@@ -442,13 +570,33 @@ const CustomerDashboard = () => {
                     onWithdrawClick={() => setShowWithdraw(true)}
                 />
 
-                <Marketplace
-                    vendors={vendors}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    onBuy={(v) => { setSelectedVendor(v); setAction('buy'); }}
-                    onSubscribe={(v) => { setSelectedVendor(v); setAction('subscribe'); }}
+                <CustomerInsights
+                    insights={insights}
+                    loading={insightsLoading}
+                    onPrimaryAction={handleInsightsAction}
+                    onRecommendedVendor={() => openVendorAction(insights?.recommendedVendor, 'subscribe')}
                 />
+
+                <SavedVendorsPanel
+                    vendors={savedVendors}
+                    onBuy={(vendor) => openVendorAction(vendor, 'buy')}
+                    onSubscribe={(vendor) => openVendorAction(vendor, 'subscribe')}
+                    onRemove={removeSavedVendor}
+                />
+
+                <div id="customer-marketplace">
+                    <Marketplace
+                        vendors={vendors}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        marketFilters={marketFilters}
+                        setMarketFilters={setMarketFilters}
+                        savedVendorIds={savedVendorIds}
+                        onToggleSave={toggleSavedVendor}
+                        onBuy={(v) => openVendorAction(v, 'buy')}
+                        onSubscribe={(v) => openVendorAction(v, 'subscribe')}
+                    />
+                </div>
 
                 {/* Pagination */}
                 {vendors.length > 0 && (
@@ -528,16 +676,22 @@ const CustomerDashboard = () => {
                                 <Download size={18} />
                             </button>
                             <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                {['all', 'delivered', 'completed'].map(f => (
+                                {[
+                                    { key: 'all', label: 'all' },
+                                    { key: 'pending', label: 'pending' },
+                                    { key: 'completed', label: 'paid' },
+                                    { key: 'delivered', label: 'delivered' },
+                                    { key: 'issues', label: 'issues' }
+                                ].map(({ key, label }) => (
                                     <button
-                                        key={f}
-                                        onClick={() => setTxFilter(f)}
-                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${txFilter === f
+                                        key={key}
+                                        onClick={() => setTxFilter(key)}
+                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${txFilter === key
                                             ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-md'
                                             : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
                                             }`}
                                     >
-                                        {f}
+                                        {label}
                                     </button>
                                 ))}
                             </div>
@@ -640,7 +794,7 @@ const CustomerDashboard = () => {
 
             <Modal
                 isOpen={!!selectedVendor}
-                onClose={() => { setSelectedVendor(null); setAction(null); }}
+                onClose={() => { setSelectedVendor(null); setAction(null); setForm({ quantity: '', duration: '7_days' }); }}
                 title={action === 'buy' ? 'Buy Milk' : 'Subscribe'}
             >
                 <div className="mb-10 p-8 bg-blue-50/50 dark:bg-blue-900/20 rounded-[2.5rem] border border-blue-100/50 dark:border-blue-900/30 flex items-center justify-between shadow-inner transition-colors duration-500">

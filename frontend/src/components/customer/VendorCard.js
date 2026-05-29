@@ -1,8 +1,8 @@
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import { Heart, TrendingUp } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 
-const VendorCard = ({ vendor, onBuy, onSubscribe }) => {
+const VendorCard = ({ vendor, onBuy, onSubscribe, onToggleSave, isSaved }) => {
     return (
         <div className="bg-white dark:bg-slate-900 p-7 rounded-[2.5rem] border border-slate-100/80 dark:border-slate-800 hover:border-blue-200/50 dark:hover:border-blue-900/50 hover:shadow-[0_20px_60px_rgba(59,130,246,0.08)] dark:hover:shadow-none transition-all duration-500 group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-full translate-x-16 -translate-y-16 group-hover:scale-110 transition-transform duration-700 opacity-40 dark:opacity-20"></div>
@@ -20,6 +20,17 @@ const VendorCard = ({ vendor, onBuy, onSubscribe }) => {
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onToggleSave(vendor)}
+                        className={`p-2.5 rounded-2xl border transition-all active:scale-95 ${isSaved
+                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+                            : 'bg-white/80 dark:bg-slate-800/90 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700 hover:text-rose-500 dark:hover:text-rose-400'
+                            }`}
+                        title={isSaved ? 'Remove from saved vendors' : 'Save vendor'}
+                    >
+                        <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} />
+                    </button>
                     <StatusBadge
                         status={vendor.isAvailable ? (vendor.availableMilk > 0 ? 'In Stock' : 'Out of Stock') : 'On Holiday'}
                         variant={vendor.isAvailable ? (vendor.availableMilk > 0 ? 'active' : 'cancelled') : 'paused'}

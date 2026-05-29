@@ -1,24 +1,29 @@
 const { Subscription, Vendor, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { UserRole } = require('../utils/constants');
+const AppError = require('../utils/appError');
 
 class SubscriptionService {
     async subscribe(customerId, vendorId, quantity, duration) {
         const vendor = await Vendor.findByPk(vendorId);
         if (!vendor) {
-            throw new Error("Vendor not found");
+            throw new AppError("Vendor not found", 404);
+        }
+
+        if (!vendor.isAvailable) {
+            throw new AppError("Vendor is currently not available", 409);
         }
 
         const existingSub = await Subscription.findOne({
             where: {
                 customerId,
                 vendorId,
-                status: ['active', 'paused']
+                status: { [Op.in]: ['active', 'paused'] }
             }
         });
 
         if (existingSub) {
-            throw new Error("You already have an active or paused subscription with this vendor.");
+            throw new AppError("You already have an active or paused subscription with this vendor.", 409);
         }
 
         const startDate = new Date();
@@ -47,7 +52,11 @@ class SubscriptionService {
             ? [{ model: Customer, attributes: ['name', 'phone', 'email'] }]
             : [{ model: Vendor, attributes: ['name', 'rate'] }];
 
-        return await Subscription.findAll({ where, include });
+        return await Subscription.findAll({
+            where,
+            include,
+            order: [['createdAt', 'DESC']]
+        });
     }
 
     async updateSubscription(id, data, userId, role) {
@@ -55,14 +64,14 @@ class SubscriptionService {
         const sub = await Subscription.findByPk(id);
 
         if (!sub) {
-            throw new Error("Subscription not found");
+            throw new AppError("Subscription not found", 404);
         }
 
         if (role === UserRole.CUSTOMER && sub.customerId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
         if (role === UserRole.VENDOR && sub.vendorId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
 
         if (status) sub.status = status;
@@ -74,10 +83,13 @@ class SubscriptionService {
     async toggleStatus(id, userId) {
         const sub = await Subscription.findByPk(id);
         if (!sub) {
-            throw new Error("Subscription not found");
+            throw new AppError("Subscription not found", 404);
         }
         if (sub.customerId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
+        }
+        if (sub.status === 'cancelled') {
+            throw new AppError("Cancelled subscriptions cannot be reactivated", 409);
         }
 
         sub.status = sub.status === 'active' ? 'paused' : 'active';
@@ -88,10 +100,10 @@ class SubscriptionService {
     async cancel(id, userId) {
         const sub = await Subscription.findByPk(id);
         if (!sub) {
-            throw new Error("Subscription not found");
+            throw new AppError("Subscription not found", 404);
         }
         if (sub.customerId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
 
         sub.status = 'cancelled';
@@ -102,10 +114,10 @@ class SubscriptionService {
     async delete(id, userId) {
         const sub = await Subscription.findByPk(id);
         if (!sub) {
-            throw new Error("Subscription not found");
+            throw new AppError("Subscription not found", 404);
         }
         if (sub.customerId !== userId) {
-            throw new Error("Unauthorized");
+            throw new AppError("Unauthorized", 403);
         }
 
         await sub.destroy();

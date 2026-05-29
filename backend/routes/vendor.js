@@ -5,6 +5,7 @@ const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
 const ApiResponse = require('../utils/apiResponse');
 const { UserRole } = require('../utils/constants');
+const handleRouteError = require('../utils/handleRouteError');
 
 // GET /api/vendor/me
 router.get('/me', authenticateToken, async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         const vendorData = await VendorService.getProfile(req.user.id);
         return ApiResponse.success(res, "Vendor data fetched", vendorData);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -24,18 +25,18 @@ router.put('/update', authenticateToken, Validation.vendorUpdate, async (req, re
         const result = await VendorService.updateVendor(req.user.id, req.body);
         return ApiResponse.success(res, "Vendor updated", result);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
 // POST /api/vendor/process-subscriptions
 router.post('/process-subscriptions', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== UserRole.VENDOR) return res.status(403).json({ error: "Not a vendor" });
+        if (req.user.role !== UserRole.VENDOR) return ApiResponse.error(res, "Not a vendor", 403);
         const result = await VendorService.processSubscriptions(req.user.id);
         return ApiResponse.success(res, `Processed ${result.processedCount} new orders. (Skipped ${result.skippedCount} already processed)`, { remainingMilk: result.remainingMilk });
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -46,7 +47,7 @@ router.get('/inventory-history', authenticateToken, async (req, res) => {
         const history = await VendorService.getInventoryHistory(req.user.id);
         return ApiResponse.success(res, "Inventory history fetched", history);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -57,7 +58,7 @@ router.get('/reports', authenticateToken, async (req, res) => {
         const report = await VendorService.getReports(req.user.id);
         return ApiResponse.success(res, "Reports fetched", report);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -67,7 +68,7 @@ router.put('/profile', authenticateToken, Validation.updateProfile, async (req, 
         const result = await VendorService.updateProfile(req.user.id, req.body);
         return ApiResponse.success(res, "Profile updated successfully", result);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -77,7 +78,7 @@ router.put('/toggle-availability', authenticateToken, async (req, res) => {
         const result = await VendorService.toggleAvailability(req.user.id);
         return ApiResponse.success(res, `Availability set to ${result.isAvailable ? 'Active' : 'Holiday'}`, result);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 

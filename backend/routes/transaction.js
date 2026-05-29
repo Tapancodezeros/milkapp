@@ -5,6 +5,7 @@ const authenticateToken = require('../middleware/auth');
 const Validation = require('../validations/requestValidation');
 const ApiResponse = require('../utils/apiResponse');
 const { UserRole } = require('../utils/constants');
+const handleRouteError = require('../utils/handleRouteError');
 
 // POST /api/buy
 router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
@@ -14,18 +15,34 @@ router.post('/buy', authenticateToken, Validation.buy, async (req, res) => {
         const transaction = await TransactionService.buy(req.user.id, vendorId, quantity);
         return ApiResponse.success(res, "Purchase successful", transaction, 201);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
 // GET /api/transactions
 router.get('/transactions', authenticateToken, async (req, res) => {
     try {
-        const { page = 1, limit = 10, paginate = 'false' } = req.query;
+        const {
+            page = 1,
+            limit = 10,
+            paginate = 'false',
+            status,
+            type,
+            deliveryStatus,
+            search,
+            dateFrom,
+            dateTo
+        } = req.query;
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
-            paginate: paginate === 'true'
+            paginate: paginate === 'true',
+            status,
+            type,
+            deliveryStatus,
+            search,
+            dateFrom,
+            dateTo
         };
 
         const transactions = await TransactionService.getTransactions(req.user.id, req.user.role, options);
@@ -36,7 +53,7 @@ router.get('/transactions', authenticateToken, async (req, res) => {
 
         return ApiResponse.success(res, "Transactions fetched", transactions);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -46,7 +63,7 @@ router.put('/transactions/:id/verify', authenticateToken, async (req, res) => {
         const transaction = await TransactionService.verifyDelivery(req.params.id, req.body.status, req.user.id);
         return ApiResponse.success(res, "Delivery status verified", transaction);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -57,7 +74,7 @@ router.put('/transactions/:id/delivery', authenticateToken, async (req, res) => 
         const transaction = await TransactionService.updateDelivery(req.params.id, req.body.status, req.user.id);
         return ApiResponse.success(res, "Delivery status updated", transaction);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -68,7 +85,7 @@ router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
         const result = await TransactionService.pay(req.params.id, req.user.id);
         return ApiResponse.success(res, "Payment successful", result);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
@@ -78,7 +95,7 @@ router.get('/balance', authenticateToken, async (req, res) => {
         const balance = await TransactionService.getBalance(req.user.id, req.user.role);
         return ApiResponse.success(res, "Balance fetched", balance);
     } catch (err) {
-        return ApiResponse.error(res, err.message, 500);
+        return handleRouteError(res, err);
     }
 });
 
