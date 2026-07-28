@@ -144,38 +144,97 @@ const seedData = async () => {
         availableMilk: 150,
         isAvailable: true,
       },
+      {
+        name: 'PureCow Organics',
+        phone: '0800111222',
+        email: 'purecow@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 75,
+        availableMilk: 200,
+        isAvailable: true,
+      },
+      {
+        name: 'Amulya Fresh Farms',
+        phone: '0800333444',
+        email: 'amulya@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 58,
+        availableMilk: 90,
+        isAvailable: true,
+      },
+      {
+        name: 'Country Delight Dairy',
+        phone: '0800555666',
+        email: 'countrydelight@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 68,
+        availableMilk: 180,
+        isAvailable: true,
+      },
+      {
+        name: 'Mother Dairy Express',
+        phone: '0800777999',
+        email: 'motherdairy@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 60,
+        availableMilk: 250,
+        isAvailable: true,
+      },
+      {
+        name: 'Nandi Hills Organic',
+        phone: '0800888111',
+        email: 'nandihills@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 80,
+        availableMilk: 100,
+        isAvailable: true,
+      },
+      {
+        name: 'Gou Ganga A2 Milk',
+        phone: '0800999222',
+        email: 'gouganga@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 85,
+        availableMilk: 65,
+        isAvailable: true,
+      },
+      {
+        name: 'Sree Krishna Dairy',
+        phone: '0800444888',
+        email: 'sreekrishna@milkapp.com',
+        password: await bcrypt.hash('vendor123', 10),
+        rate: 64,
+        availableMilk: 140,
+        isAvailable: true,
+      },
     ];
 
-    const customerData = [
-      {
-        name: 'Alice Johnson',
-        phone: '0811000001',
-        email: 'alice@milkapp.com',
-        password: await bcrypt.hash('customer123', 10),
-        walletBalance: 350,
-      },
-      {
-        name: 'Bob Martin',
-        phone: '0811000002',
-        email: 'bob@milkapp.com',
-        password: await bcrypt.hash('customer123', 10),
-        walletBalance: 220,
-      },
-      {
-        name: 'Cathy Lee',
-        phone: '0811000003',
-        email: 'cathy@milkapp.com',
-        password: await bcrypt.hash('customer123', 10),
-        walletBalance: 410,
-      },
-      {
-        name: 'David Kumar',
-        phone: '0811000004',
-        email: 'david@milkapp.com',
-        password: await bcrypt.hash('customer123', 10),
-        walletBalance: 575,
-      },
+    const indianNames = [
+      "Aarav Sharma", "Ananya Patel", "Rajesh Verma", "Priya Nair", "Vikram Singh",
+      "Sneha Kulkarni", "Arjun Gupta", "Divya Iyer", "Amit Joshi", "Meera Reddy",
+      "Rohan Mehta", "Kavya Deshmukh", "Aditya Rao", "Pooja Hegde", "Siddharth Malhotra",
+      "Neha Choudhury", "Suresh Pillai", "Ritu Saxena", "Tarun Chawla", "Ishita Banerjee",
+      "Varun Agarwal", "Deepa Bhatnagar", "Gaurav Bhatt", "Sunita Ranganathan", "Alok Mishra",
+      "Swati Chatterji", "Nikhil Trivedi", "Shreya Ghoshal", "Manish Tripathi", "Aarti Shah",
+      "Deepak Chauhan", "Preeti Grover", "Kunal Kapoor", "Shilpa Shetty", "Harish Nambiar",
+      "Vandana Tyagi", "Pranav Sen", "Pallavi Mahajan", "Vivek Oberoi", "Madhuri Dixit",
+      "Abhinav Bindra", "Tanvi Sethi", "Chirag Paswan", "Archana Puran", "Bhaskar Roy",
+      "Rupa Ganguly", "Chetan Bhagat", "Smriti Irani", "Yash Vardhan", "Devika Rani"
     ];
+
+    const customerPasswordHash = await bcrypt.hash('customer123', 10);
+
+    const customerData = indianNames.map((name, index) => {
+      const slug = name.toLowerCase().replace(/\s+/g, '.');
+      const phoneDigits = String(9810000001 + index);
+      return {
+        name,
+        phone: phoneDigits,
+        email: `${slug}@milkapp.com`,
+        password: customerPasswordHash,
+        walletBalance: 3000,
+      };
+    });
 
     const vendorRecords = [];
     for (const vendor of vendors) {
@@ -211,59 +270,40 @@ const seedData = async () => {
         where: { email: customer.email },
         defaults: customer,
       });
+
+      if (parseFloat(record.walletBalance) < 3000) {
+        record.walletBalance = 3000;
+        await record.save();
+      }
       customerRecords.push(record);
     }
 
     const today = new Date();
 
-    const subscriptions = [
-      {
-        quantity: 2,
-        duration: '1_month',
-        startDate: formatDate(today),
-        endDate: formatDate(addDays(today, 30)),
-        fixedRate: vendorRecords[0].rate,
-        customerId: customerRecords[0].id,
-        vendorId: vendorRecords[0].id,
-      },
-      {
-        quantity: 1.5,
-        duration: '7_days',
-        startDate: formatDate(today),
-        endDate: formatDate(addDays(today, 7)),
-        fixedRate: vendorRecords[1].rate,
-        customerId: customerRecords[1].id,
-        vendorId: vendorRecords[1].id,
-      },
-      {
-        quantity: 3,
-        duration: '3_months',
-        startDate: formatDate(today),
-        endDate: formatDate(addDays(today, 90)),
-        fixedRate: vendorRecords[0].rate,
-        customerId: customerRecords[2].id,
-        vendorId: vendorRecords[0].id,
-      },
-      {
-        quantity: 1,
-        duration: '1_month',
-        startDate: formatDate(addDays(today, -10)),
-        endDate: formatDate(addDays(today, 20)),
-        fixedRate: vendorRecords[2].rate,
-        customerId: customerRecords[3].id,
-        vendorId: vendorRecords[2].id,
-      },
-    ];
+    for (let i = 0; i < customerRecords.length; i++) {
+      const customer = customerRecords[i];
+      const vendor = vendorRecords[i % vendorRecords.length];
+      const quantity = (i % 3) + 1;
+      const durations = ['7_days', '1_month', '3_months'];
+      const duration = durations[i % 3];
+      const days = duration === '7_days' ? 7 : duration === '1_month' ? 30 : 90;
 
-    for (const subscription of subscriptions) {
       await Subscription.findOrCreate({
         where: {
-          customerId: subscription.customerId,
-          vendorId: subscription.vendorId,
-          duration: subscription.duration,
-          startDate: subscription.startDate,
+          customerId: customer.id,
+          vendorId: vendor.id,
         },
-        defaults: subscription,
+        defaults: {
+          quantity,
+          duration,
+          startDate: formatDate(today),
+          endDate: formatDate(addDays(today, days)),
+          fixedRate: vendor.rate,
+          deliveryTime: '07:00 AM',
+          status: 'active',
+          customerId: customer.id,
+          vendorId: vendor.id,
+        },
       });
     }
 

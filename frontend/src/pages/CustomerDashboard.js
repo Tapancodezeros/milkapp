@@ -1,16 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
     Loader2,
-    Calendar,
     ArrowRight,
     ArrowLeft,
-    Plus,
-    Printer,
     Download,
-    TriangleAlert,
-    Lock
+    TriangleAlert
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -20,17 +16,20 @@ import CustomerInsights from '../components/customer/CustomerInsights';
 import Marketplace from '../components/customer/Marketplace';
 import SavedVendorsPanel from '../components/customer/SavedVendorsPanel';
 import AnalyticsChart from '../components/vendor/AnalyticsChart';
-import SubscriptionItem from '../components/customer/SubscriptionItem';
 import CustomerTransactions from '../components/customer/CustomerTransactions';
+import SubscriptionsPanel from '../components/customer/SubscriptionsPanel';
 import Modal from '../components/shared/Modal';
 import ProfileModal from '../components/shared/ProfileModal';
+import { PRESET_DEMO_CARDS } from '../components/shared/DemoCardSelector';
+import TopupModal, { Bank3DSModal } from '../components/customer/TopupModal';
+import WithdrawModal from '../components/customer/WithdrawModal';
+import ReceiptModal from '../components/customer/ReceiptModal';
 import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import RainPreferencesModal from '../components/customer/RainPreferencesModal';
 import { API_BASE_URL } from '../api/config';
 
 const CustomerDashboard = () => {
-    const SAVED_VENDORS_KEY = 'milkapp_saved_vendors';
     const [vendors, setVendors] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -46,7 +45,16 @@ const CustomerDashboard = () => {
     const [walletPassword, setWalletPassword] = useState('');
     const [showTopup, setShowTopup] = useState(false);
     const [showWithdraw, setShowWithdraw] = useState(false);
+    const [paymentTab, setPaymentTab] = useState('card'); // 'card' or 'password'
+    const [selectedDemoCard, setSelectedDemoCard] = useState(PRESET_DEMO_CARDS[0]);
+    const [show3DSModal, setShow3DSModal] = useState(false);
+    const [processing3DSStep, setProcessing3DSStep] = useState(0);
+    const [processing3DSMsg, setProcessing3DSMsg] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSelectDemoCard = useCallback((card) => {
+        setSelectedDemoCard(card);
+    }, []);
     const [marketFilters, setMarketFilters] = useState({
         availableOnly: false,
         sortBy: 'createdAt',
@@ -56,7 +64,22 @@ const CustomerDashboard = () => {
     });
     const [insights, setInsights] = useState(null);
     const [insightsLoading, setInsightsLoading] = useState(true);
-    const [savedVendors, setSavedVendors] = useState([]);
+    const currentUser = getAuthUser();
+    const SAVED_VENDORS_KEY = currentUser?.id ? `milkapp_saved_vendors_${currentUser.id}` : 'milkapp_saved_vendors';
+    const [savedVendors, setSavedVendors] = useState(() => {
+        try {
+            const userObj = getAuthUser();
+            const key = userObj?.id ? `milkapp_saved_vendors_${userObj.id}` : 'milkapp_saved_vendors';
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (error) {
+            console.error('Saved vendors load error:', error);
+        }
+        return [];
+    });
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
@@ -263,22 +286,11 @@ const CustomerDashboard = () => {
 
     useEffect(() => {
         try {
-            const rawSavedVendors = localStorage.getItem(SAVED_VENDORS_KEY);
-            if (rawSavedVendors) {
-                setSavedVendors(JSON.parse(rawSavedVendors));
-            }
-        } catch (error) {
-            console.error('Saved vendors load error:', error);
-        }
-    }, []);
-
-    useEffect(() => {
-        try {
             localStorage.setItem(SAVED_VENDORS_KEY, JSON.stringify(savedVendors));
         } catch (error) {
             console.error('Saved vendors persist error:', error);
         }
-    }, [savedVendors]);
+    }, [savedVendors, SAVED_VENDORS_KEY]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -306,15 +318,13 @@ const CustomerDashboard = () => {
         const vendorSnapshot = createVendorSnapshot(vendor);
         const alreadySaved = savedVendorIds.includes(vendor.id);
 
-        setSavedVendors((current) => {
-            if (alreadySaved) {
-                toast.success(`${vendor.name} removed from saved vendors`);
-                return current.filter((entry) => entry.id !== vendor.id);
-            }
-
+        if (alreadySaved) {
+            toast.success(`${vendor.name} removed from saved vendors`);
+            setSavedVendors((current) => current.filter((entry) => entry.id !== vendor.id));
+        } else {
             toast.success(`${vendor.name} saved for quick access`);
-            return [vendorSnapshot, ...current.filter((entry) => entry.id !== vendor.id)].slice(0, 6);
-        });
+            setSavedVendors((current) => [vendorSnapshot, ...current.filter((entry) => entry.id !== vendor.id)].slice(0, 6));
+        }
     };
 
     const removeSavedVendor = (vendorId) => {
@@ -344,7 +354,7 @@ const CustomerDashboard = () => {
     };
 
     const handleTopup = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         const amt = parseFloat(topupAmount);
         if (!amt || amt < 10) {
             return toast.error("Topup must be at least ₹10");
@@ -352,25 +362,105 @@ const CustomerDashboard = () => {
         if (walletBalance + amt > 50000) {
             return toast.error(`Wallet balance cannot exceed ₹50,000. Current: ₹${walletBalance}`);
         }
-        if (!walletPassword) {
-            return toast.error("Please enter your account password");
+
+        if (paymentTab === 'password') {
+            if (!walletPassword) {
+                return toast.error("Please enter your account password");
+            }
+
+            setActionLoading(true);
+            try {
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                await axios.post(`${API_BASE_URL}/customer/topup`, { amount: amt, password: walletPassword }, config);
+                toast.success(`₹${amt} added to your wallet`);
+                setShowTopup(false);
+                setTopupAmount('');
+                setWalletPassword('');
+                fetchProfile();
+                fetchInsights();
+            } catch (err) {
+                toast.error(err.response?.data?.error || "Topup failed");
+            } finally {
+                setActionLoading(false);
+            }
+            return;
         }
 
-        setActionLoading(true);
-        try {
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.post(`${API_BASE_URL}/customer/topup`, { amount: amt, password: walletPassword }, config);
-            toast.success(`₹${amt} added to your wallet`);
-            setShowTopup(false);
-            setTopupAmount('');
-            setWalletPassword('');
-            fetchProfile();
-            fetchInsights();
-        } catch (err) {
-            toast.error(err.response?.data?.error || "Topup failed");
-        } finally {
-            setActionLoading(false);
+        // Demo Card Payment Handling
+        if (!selectedDemoCard) {
+            return toast.error("Please select a demo card");
         }
+
+        if (selectedDemoCard.isDeclined) {
+            setActionLoading(true);
+            toast.loading("Connecting to card issuer gateway...", { id: 'demo-card-process' });
+            setTimeout(() => {
+                setActionLoading(false);
+                toast.error("Card Declined: Simulated issuer failure (Insufficient demo card funds / blocked)", { id: 'demo-card-process' });
+            }, 1200);
+            return;
+        }
+
+        // Check Card Available Balance
+        if (selectedDemoCard.balance !== undefined && selectedDemoCard.balance < amt) {
+            return toast.error(`Insufficient Demo Card Balance. Available: ₹${(selectedDemoCard.balance || 0).toLocaleString('en-IN')}, Topup Amount: ₹${amt.toLocaleString('en-IN')}`);
+        }
+
+        // Open 3D Secure Verification Modal Overlay
+        setShow3DSModal(true);
+        setProcessing3DSStep(1);
+        setProcessing3DSMsg("Contacting Bank Gateway & Validating 3D Secure...");
+        setActionLoading(true);
+
+        setTimeout(async () => {
+            setProcessing3DSStep(2);
+            setProcessing3DSMsg(`Authorizing ₹${amt.toFixed(2)} via ${selectedDemoCard.brand || 'Visa'} (•••• ${selectedDemoCard.last4 || '4242'})...`);
+            
+            try {
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                await axios.post(`${API_BASE_URL}/customer/topup`, {
+                    amount: amt,
+                    isDemoCard: true,
+                    cardBrand: selectedDemoCard.brand,
+                    cardLast4: selectedDemoCard.last4 || '4242'
+                }, config);
+
+                // Deduct topup amount from demo card balance in user's localStorage
+                const userObj = getAuthUser();
+                const storageKey = userObj?.id ? `milkapp_demo_cards_${userObj.id}` : 'milkapp_demo_cards_guest';
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        const updated = parsed.map(c => c.id === selectedDemoCard.id ? { ...c, balance: Math.max(0, (c.balance || 0) - amt) } : c);
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
+                    }
+                } catch (e) {
+                    console.error("Failed deducting demo card balance", e);
+                }
+
+                setProcessing3DSStep(3);
+                setProcessing3DSMsg("Payment Approved! Depositing funds into wallet...");
+                
+                setTimeout(() => {
+                    setShow3DSModal(false);
+                    setShowTopup(false);
+                    setTopupAmount('');
+                    fetchProfile();
+                    fetchInsights();
+                    toast.success(`₹${amt} deposited via ${selectedDemoCard.brand || 'Visa'} (•••• ${selectedDemoCard.last4 || '4242'})!`);
+                }, 1000);
+            } catch (err) {
+                setProcessing3DSStep(4);
+                setProcessing3DSMsg(err.response?.data?.error || "Demo card payment authorization failed");
+                setTimeout(() => {
+                    setShow3DSModal(false);
+                    toast.error(err.response?.data?.error || "Demo card topup failed");
+                }, 1500);
+            } finally {
+                setActionLoading(false);
+            }
+        }, 1200);
     };
 
     const handleWithdraw = async (e) => {
@@ -515,6 +605,7 @@ const CustomerDashboard = () => {
     };
 
     const handlePayTransaction = async (id) => {
+        const tx = transactions.find(t => t.id === id);
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.put(`${API_BASE_URL}/transactions/${id}/pay`, {}, config);
@@ -523,7 +614,15 @@ const CustomerDashboard = () => {
             fetchTransactions();
             fetchInsights();
         } catch (err) {
-            toast.error(err.response?.data?.error || "Payment failed");
+            const errorMsg = err.response?.data?.error || "Payment failed";
+            if (errorMsg.toLowerCase().includes('insufficient') && tx) {
+                toast.error(`Insufficient wallet balance. Opening Demo Card topup for ₹${tx.amount}...`);
+                setTopupAmount(String(tx.amount));
+                setPaymentTab('card');
+                setShowTopup(true);
+            } else {
+                toast.error(errorMsg);
+            }
         }
     };
 
@@ -598,7 +697,7 @@ const CustomerDashboard = () => {
                 )}
             />
 
-            <main className="relative z-10 flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-20">
+            <main className="relative z-10 flex-1 p-3.5 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-8 sm:space-y-16">
 
                 <RainyWeatherBanner
                     advisory={weatherAdvisory}
@@ -675,38 +774,12 @@ const CustomerDashboard = () => {
                         />
                     </div>
 
-                    <div className="lg:col-span-4 space-y-10 group/sub">
-                        <div className="flex justify-between items-end px-2 border-b-2 border-slate-100 dark:border-slate-800 pb-4">
-                            <div>
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-indigo-600 dark:text-indigo-400 shadow-sm"><Calendar size={22} strokeWidth={2.5} /></div>
-                                    Subscriptions
-                                </h2>
-                                <p className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mt-2 ml-1">Recurring Orders</p>
-                            </div>
-                            <div className="bg-indigo-600 dark:bg-indigo-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg shadow-indigo-100 dark:shadow-none">
-                                {subscriptions.length}
-                            </div>
-                        </div>
-                        <div className="space-y-8">
-                            {subscriptions.map(sub => (
-                                <SubscriptionItem
-                                    key={sub.id}
-                                    sub={sub}
-                                    onToggle={toggleSubscription}
-                                    onCancel={cancelSubscription}
-                                    onDelete={deleteSubscription}
-                                />
-                            ))}
-                            {subscriptions.length === 0 && (
-                                <div className="p-20 bg-white dark:bg-slate-900/30 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 text-center shadow-[0_20px_50px_rgba(0,0,0,0.01)] dark:shadow-none group-hover/sub:border-indigo-100 dark:group-hover/sub:border-indigo-900 transition-colors duration-500">
-                                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200 dark:text-slate-700"><Calendar size={32} /></div>
-                                    <p className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">No Subscriptions</p>
-                                    <p className="text-xs font-bold text-slate-300 dark:text-slate-700 mt-2">Subscribe to a vendor to start</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <SubscriptionsPanel
+                        subscriptions={subscriptions}
+                        onToggleStatus={toggleSubscription}
+                        onCancel={cancelSubscription}
+                        onDelete={deleteSubscription}
+                    />
                 </div>
 
                 <div className="pt-8">
@@ -752,118 +825,42 @@ const CustomerDashboard = () => {
 
             </main>
 
-            {/* MODALS */}
-            <Modal
-                isOpen={showTopup}
-                onClose={() => { setShowTopup(false); setWalletPassword(''); }}
-                title="Add Money"
-            >
-                <form onSubmit={handleTopup} className="space-y-6">
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-end px-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
-                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Max Total: 50,000</span>
-                        </div>
-                        <div className="relative group">
-                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-300 dark:text-slate-700 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors">₹</div>
-                            <input
-                                type="number"
-                                value={topupAmount}
-                                onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-8 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-4xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
-                                placeholder="0.00"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            {[500, 1000, 5000].map(amt => (
-                                <button
-                                    key={amt}
-                                    type="button"
-                                    onClick={() => setTopupAmount(amt.toString())}
-                                    className="py-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/50 rounded-2xl text-[11px] font-black text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95 shadow-sm"
-                                >
-                                    +₹{amt}
-                                </button>
-                            ))}
-                        </div>
+            {/* ADD MONEY / TOPUP MODAL */}
+            <TopupModal
+                showTopup={showTopup}
+                onCloseTopup={() => { setShowTopup(false); setWalletPassword(''); }}
+                topupAmount={topupAmount}
+                setTopupAmount={setTopupAmount}
+                paymentTab={paymentTab}
+                setPaymentTab={setPaymentTab}
+                selectedDemoCard={selectedDemoCard}
+                handleSelectDemoCard={handleSelectDemoCard}
+                userId={user?.id}
+                actionLoading={actionLoading}
+                handleTopup={handleTopup}
+                walletPassword={walletPassword}
+                setWalletPassword={setWalletPassword}
+            />
 
-                        <div className="pt-2 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
-                                <Lock size={12} /> Confirm Account Password
-                            </label>
-                            <input
-                                type="password"
-                                value={walletPassword}
-                                onChange={(e) => setWalletPassword(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-4 rounded-2xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold text-sm text-slate-900 dark:text-white shadow-inner"
-                                placeholder="Enter password to authorize"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={actionLoading}
-                        className="w-full bg-slate-900 dark:bg-blue-600 group relative overflow-hidden text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
-                    >
-                        <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                        <span className="relative z-10 flex items-center gap-3">
-                            {actionLoading ? <Loader2 className="animate-spin" /> : <>Add to Wallet <Plus size={18} strokeWidth={3} /></>}
-                        </span>
-                    </button>
-                </form>
-            </Modal>
+            {/* SIMULATED 3D SECURE BANK AUTHORIZATION MODAL */}
+            <Bank3DSModal
+                show3DSModal={show3DSModal}
+                processing3DSStep={processing3DSStep}
+                processing3DSMsg={processing3DSMsg}
+            />
 
-            <Modal
-                isOpen={showWithdraw}
-                onClose={() => { setShowWithdraw(false); setWalletPassword(''); }}
-                title="Withdraw Money"
-            >
-                <form onSubmit={handleWithdraw} className="space-y-6">
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-end px-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
-                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Available: ₹{walletBalance}</span>
-                        </div>
-                        <div className="relative group">
-                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-300 dark:text-slate-700 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors">₹</div>
-                            <input
-                                type="number"
-                                value={topupAmount}
-                                onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-8 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-4xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
-                                placeholder="0.00"
-                                autoFocus
-                            />
-                        </div>
-
-                        <div className="pt-2 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
-                                <Lock size={12} /> Confirm Account Password
-                            </label>
-                            <input
-                                type="password"
-                                value={walletPassword}
-                                onChange={(e) => setWalletPassword(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-4 rounded-2xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold text-sm text-slate-900 dark:text-white shadow-inner"
-                                placeholder="Enter password to authorize"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={actionLoading}
-                        className="w-full bg-slate-900 dark:bg-blue-600 group relative overflow-hidden text-white p-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 dark:hover:bg-blue-500 transition-all disabled:opacity-50 flex justify-center items-center gap-3 shadow-2xl shadow-blue-500/20 dark:shadow-none"
-                    >
-                        <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                        <span className="relative z-10 flex items-center gap-3">
-                            {actionLoading ? <Loader2 className="animate-spin" /> : <>Withdraw Balance <ArrowRight size={18} strokeWidth={3} /></>}
-                        </span>
-                    </button>
-                </form>
-            </Modal>
+            {/* WITHDRAW MODAL */}
+            <WithdrawModal
+                showWithdraw={showWithdraw}
+                onCloseWithdraw={() => { setShowWithdraw(false); setWalletPassword(''); }}
+                handleWithdraw={handleWithdraw}
+                topupAmount={topupAmount}
+                setTopupAmount={setTopupAmount}
+                walletBalance={walletBalance}
+                walletPassword={walletPassword}
+                setWalletPassword={setWalletPassword}
+                actionLoading={actionLoading}
+            />
 
             <Modal
                 isOpen={!!selectedVendor}
@@ -956,84 +953,11 @@ const CustomerDashboard = () => {
             </Modal>
 
             {/* RECEIPT MODAL */}
-            <Modal
-                isOpen={!!selectedReceipt}
-                onClose={() => setSelectedReceipt(null)}
-                title="Receipt"
-            >
-                {selectedReceipt && (
-                    <div className="space-y-8 animate-fadeIn">
-                        <div className="text-center space-y-2 border-b-2 border-dashed border-slate-100 dark:border-slate-800 pb-8">
-                            <div className="w-16 h-16 bg-slate-900 dark:bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3 transition-transform hover:rotate-0 duration-500">
-                                <Plus size={32} className="text-white" />
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Milk Receipt</h3>
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">Verified Transaction</p>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-1">Transaction ID</p>
-                                    <p className="text-xs font-black text-slate-900 dark:text-white tracking-widest font-mono">#{String(selectedReceipt.id).slice(-8).toUpperCase()}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-1">Date</p>
-                                    <p className="text-xs font-black text-slate-900 dark:text-white">{selectedReceipt.date}</p>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-4 shadow-inner">
-                                <div className="flex justify-between items-center group">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-white dark:bg-slate-700 rounded-lg flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400 border border-slate-100 dark:border-slate-600 shadow-sm transition-transform group-hover:scale-110">{selectedReceipt.Vendor?.name ? selectedReceipt.Vendor.name[0] : 'V'}</div>
-                                        <p className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">{selectedReceipt.Vendor?.name}</p>
-                                    </div>
-                                    <p className="text-[11px] font-black text-slate-400 dark:text-slate-500">Authorized Seller</p>
-                                </div>
-                                <div className="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Item</p>
-                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Qty & Rate</p>
-                                    </div>
-                                    <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                                        <p className="text-xs font-black text-slate-900 dark:text-white">Milk ({selectedReceipt.type === 'subscription' ? 'Subscription' : 'One-time'})</p>
-                                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{selectedReceipt.quantity}L @ ₹{(selectedReceipt.amount / selectedReceipt.quantity).toFixed(2)}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center px-4 bg-blue-50/30 dark:bg-blue-900/10 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-900/20">
-                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">Total Amount</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">₹{parseFloat(selectedReceipt.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-                            </div>
-                        </div>
-
-                        <div className="py-4 px-6 bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                                <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Delivered & Verified</p>
-                            </div>
-                            <span className="text-[8px] font-black text-emerald-600/50 dark:text-emerald-400/50 uppercase tracking-[0.2em]">SECURE TRANSACTION</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 pt-4">
-                            <button
-                                onClick={() => window.print()}
-                                className="bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 p-5 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700 shadow-sm active:scale-95"
-                            >
-                                <Printer size={16} /> Print
-                            </button>
-                            <button
-                                onClick={handleExportReceipt}
-                                className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 p-5 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 dark:shadow-none flex items-center justify-center gap-2 active:scale-95"
-                            >
-                                <Download size={16} /> Export
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
+            <ReceiptModal
+                selectedReceipt={selectedReceipt}
+                onCloseReceipt={() => setSelectedReceipt(null)}
+                handleExportReceipt={handleExportReceipt}
+            />
 
             <footer className="relative z-10 bg-white dark:bg-slate-950 border-t border-slate-200/60 dark:border-slate-800 p-12 text-center transition-colors duration-500">
                 <div className="max-w-7xl mx-auto flex flex-col items-center gap-6">

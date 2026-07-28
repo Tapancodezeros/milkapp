@@ -275,14 +275,14 @@ const VendorDashboard = () => {
                 )}
             />
 
-            <main className="flex-1 p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-10">
+            <main className="flex-1 p-3.5 sm:p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-6 sm:space-y-10">
                 <RainyWeatherBanner
                     advisory={weatherAdvisory}
                     userRole="vendor"
                     onUpdateAdvisory={(newAdvisory) => setWeatherAdvisory(newAdvisory)}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div className="relative group cursor-pointer" onClick={toggleAvailability}>
                         <StatsCard label="Operating Mode" val={stats.isAvailable ? 'Active' : 'Holiday'} icon={stats.isAvailable ? Zap : Palmtree} color={stats.isAvailable ? 'emerald' : 'orange'} sub="Click to toggle" />
                         <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">

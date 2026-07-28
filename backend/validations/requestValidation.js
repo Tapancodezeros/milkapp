@@ -69,9 +69,9 @@ class Validation {
     }
 
     static topup(req, res, next) {
-        const { amount, password } = req.body;
+        const { amount, password, isDemoCard } = req.body;
         if (amount === undefined || amount === null) return res.status(400).json({ error: "Topup amount is required" });
-        if (!password || typeof password !== 'string' || !password.trim()) {
+        if (!isDemoCard && (!password || typeof password !== 'string' || !password.trim())) {
             return res.status(400).json({ error: "Password is required for top-up" });
         }
 

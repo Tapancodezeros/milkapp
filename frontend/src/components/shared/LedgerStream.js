@@ -1,7 +1,7 @@
 import { History, Download } from 'lucide-react';
 import Card from '../shared/Card';
 
-const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdateDelivery, onExport }) => {
+const LedgerStream = ({ sales = [], currentPage = 1, totalPages = 1, setCurrentPage, onUpdateDelivery, onExport }) => {
     return (
         <Card className="flex flex-col transition-colors duration-500" noPadding>
             <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-gradient-to-b from-slate-50/50 to-white dark:from-slate-900/50 dark:to-transparent">
@@ -61,13 +61,13 @@ const LedgerStream = ({ sales, currentPage, totalPages, setCurrentPage, onUpdate
                                     {s.deliveryStatus === 'pending' || !s.deliveryStatus ? (
                                         <div className="flex gap-2 justify-center">
                                             <button
-                                                onClick={() => onUpdateDelivery(s.id, 'delivered')}
+                                                onClick={() => onUpdateDelivery?.(s.id, 'delivered')}
                                                 className="px-3 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase rounded-lg hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
                                             >
                                                 Deliver
                                             </button>
                                             <button
-                                                onClick={() => onUpdateDelivery(s.id, 'not_delivered')}
+                                                onClick={() => onUpdateDelivery?.(s.id, 'not_delivered')}
                                                 className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase rounded-lg hover:bg-red-500 transition-all active:scale-95 shadow-lg shadow-red-500/20"
                                             >
                                                 Fail

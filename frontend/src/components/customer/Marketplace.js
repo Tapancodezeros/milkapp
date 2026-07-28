@@ -14,43 +14,43 @@ const Marketplace = ({
     onSubscribe
 }) => {
     return (
-        <section className="space-y-10 py-4 transition-colors duration-500">
-            <div className="flex flex-col gap-8 px-2">
+        <section className="space-y-6 sm:space-y-10 py-2 sm:py-4 transition-colors duration-500">
+            <div className="flex flex-col gap-4 sm:gap-8 px-1 sm:px-2">
                 <div>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-full"></div>
-                        <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Marketplace</h2>
+                    <div className="flex items-center gap-2.5 sm:gap-3 mb-1.5 sm:mb-3">
+                        <div className="w-1 h-6 sm:h-8 bg-blue-600 dark:bg-blue-500 rounded-full"></div>
+                        <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Marketplace</h2>
                     </div>
-                    <p className="text-sm text-slate-400 dark:text-slate-500 font-bold uppercase tracking-[0.2em] ml-4">Choose your vendor</p>
+                    <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-bold uppercase tracking-[0.2em] ml-3.5 sm:ml-4">Choose your vendor</p>
                 </div>
 
-                <div className="flex flex-col xl:flex-row gap-4 xl:items-center xl:justify-between">
+                <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 xl:items-center xl:justify-between">
                     <div className="relative w-full xl:max-w-[420px] group">
-                        <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
-                            <Search className="text-slate-400 dark:text-slate-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" size={20} />
+                        <div className="absolute inset-y-0 left-4 sm:left-6 flex items-center pointer-events-none">
+                            <Search className="text-slate-400 dark:text-slate-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <input
                             type="text"
                             placeholder="Search local vendors..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-16 pr-8 py-5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-400/5 shadow-[0_10px_40px_rgba(0,0,0,0.02)] dark:shadow-none focus:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                            className="w-full pl-11 sm:pl-16 pr-4 sm:pr-8 py-3.5 sm:py-5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl sm:rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/5 dark:focus:ring-blue-400/5 shadow-[0_10px_40px_rgba(0,0,0,0.02)] dark:shadow-none focus:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700 text-xs sm:text-sm"
                         />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
-                            <SlidersHorizontal size={14} />
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mr-1">
+                            <SlidersHorizontal size={13} />
                             Filters
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-2 flex-1 sm:flex-none">
                             <input
                                 type="number"
                                 min="0"
                                 placeholder="Min ₹"
                                 value={marketFilters.minRate}
                                 onChange={(e) => setMarketFilters((prev) => ({ ...prev, minRate: e.target.value }))}
-                                className="w-28 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-bold outline-none focus:border-blue-500"
+                                className="w-full sm:w-24 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold outline-none focus:border-blue-500"
                             />
                             <input
                                 type="number"
@@ -58,13 +58,13 @@ const Marketplace = ({
                                 placeholder="Max ₹"
                                 value={marketFilters.maxRate}
                                 onChange={(e) => setMarketFilters((prev) => ({ ...prev, maxRate: e.target.value }))}
-                                className="w-28 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-bold outline-none focus:border-blue-500"
+                                className="w-full sm:w-24 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold outline-none focus:border-blue-500"
                             />
                         </div>
                         <button
                             type="button"
                             onClick={() => setMarketFilters((prev) => ({ ...prev, availableOnly: !prev.availableOnly }))}
-                            className={`px-5 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-[0.2em] transition-all ${marketFilters.availableOnly
+                            className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] transition-all ${marketFilters.availableOnly
                                 ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 shadow-lg'
                                 : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
                                 }`}
@@ -77,7 +77,7 @@ const Marketplace = ({
                                 const [sortBy, sortOrder] = e.target.value.split(':');
                                 setMarketFilters((prev) => ({ ...prev, sortBy, sortOrder }));
                             }}
-                            className="px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-bold outline-none focus:border-blue-500"
+                            className="px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold outline-none focus:border-blue-500"
                         >
                             <option value="createdAt:DESC">Newest First</option>
                             <option value="rate:ASC">Lowest Rate</option>
@@ -94,7 +94,7 @@ const Marketplace = ({
                                 minRate: '',
                                 maxRate: ''
                             })}
-                            className="px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                            className="px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
                         >
                             Reset
                         </button>
@@ -102,7 +102,7 @@ const Marketplace = ({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
                 {vendors.map(v => (
                     <VendorCard
                         key={v.id}
@@ -114,13 +114,13 @@ const Marketplace = ({
                     />
                 ))}
                 {vendors.length === 0 && (
-                    <div className="col-span-full py-32 bg-slate-50/50 dark:bg-slate-900/30 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[4rem] flex flex-col items-center justify-center text-slate-300 gap-6">
-                        <div className="p-8 bg-white dark:bg-slate-900 rounded-full shadow-xl shadow-slate-200/50 dark:shadow-none floating-slow border border-transparent dark:border-slate-800">
-                            <Search size={48} className="text-slate-200 dark:text-slate-700" />
+                    <div className="col-span-full py-20 sm:py-32 bg-slate-50/50 dark:bg-slate-900/30 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl sm:rounded-[4rem] flex flex-col items-center justify-center text-slate-300 gap-4 sm:gap-6">
+                        <div className="p-6 sm:p-8 bg-white dark:bg-slate-900 rounded-full shadow-xl shadow-slate-200/50 dark:shadow-none floating-slow border border-transparent dark:border-slate-800">
+                            <Search className="text-slate-200 dark:text-slate-700 w-8 h-8 sm:w-12 sm:h-12" />
                         </div>
-                        <div className="text-center">
-                            <p className="font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em] text-sm">No vendors found</p>
-                            <p className="text-xs font-bold text-slate-300 dark:text-slate-700 mt-2">Try changing your search or vendor filters</p>
+                        <div className="text-center px-4">
+                            <p className="font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.25em] text-xs sm:text-sm">No vendors found</p>
+                            <p className="text-xs font-bold text-slate-300 dark:text-slate-700 mt-1 sm:mt-2">Try changing your search or vendor filters</p>
                         </div>
                     </div>
                 )}

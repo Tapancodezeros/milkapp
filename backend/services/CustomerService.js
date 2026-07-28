@@ -161,14 +161,10 @@ class CustomerService {
         };
     }
 
-    async topUp(id, amount, password) {
+    async topUp(id, amount, password, options = {}) {
         const topupAmt = parseFloat(amount);
         if (isNaN(topupAmt) || !Number.isFinite(topupAmt) || topupAmt < 10) {
             throw new AppError("Invalid topup amount. Minimum topup is ₹10.", 400);
-        }
-
-        if (!password) {
-            throw new AppError("Password is required for top-up", 400);
         }
 
         const customer = await Customer.findByPk(id);
@@ -176,9 +172,15 @@ class CustomerService {
             throw new AppError("Customer not found", 404);
         }
 
-        const validPassword = await bcrypt.compare(password, customer.password);
-        if (!validPassword) {
-            throw new AppError("Invalid password. Please enter your correct account password.", 401);
+        if (!options.isDemoCard) {
+            if (!password) {
+                throw new AppError("Password is required for top-up", 400);
+            }
+
+            const validPassword = await bcrypt.compare(password, customer.password);
+            if (!validPassword) {
+                throw new AppError("Invalid password. Please enter your correct account password.", 401);
+            }
         }
 
         const currentBalance = parseFloat(customer.walletBalance) || 0;
@@ -191,7 +193,12 @@ class CustomerService {
 
         customer.walletBalance = newBalance;
         await customer.save();
-        return { balance: customer.walletBalance };
+        return {
+            balance: customer.walletBalance,
+            paymentMethod: options.isDemoCard ? 'demo_card' : 'password',
+            cardBrand: options.cardBrand || null,
+            cardLast4: options.cardLast4 || null
+        };
     }
 
     async withdraw(id, amount, password) {

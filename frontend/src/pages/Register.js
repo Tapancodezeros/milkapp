@@ -51,7 +51,7 @@ const Register = () => {
             <div className="absolute top-0 -right-40 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
             <div className="absolute bottom-0 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000"></div>
 
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-10 mx-6">
+            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-5 sm:p-10 rounded-2xl sm:rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-10 mx-3 sm:mx-6">
                 <div className="flex flex-col items-center mb-10">
                     <div className="bg-gradient-to-tr from-emerald-500 to-teal-600 p-4 rounded-3xl text-white shadow-2xl shadow-emerald-500/20 mb-6 group transition-transform hover:scale-110">
                         <UserPlus size={32} />

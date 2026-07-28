@@ -45,7 +45,7 @@ const Login = () => {
             <div className="absolute top-0 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
             <div className="absolute bottom-0 -right-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
 
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 mx-6">
+            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-5 sm:p-10 rounded-2xl sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 mx-3 sm:mx-6">
                 <div className="flex flex-col items-center mb-10">
                     <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-4 rounded-3xl text-white shadow-2xl shadow-blue-500/20 mb-6 group transition-transform hover:scale-110">
                         <Zap size={32} />
@@ -62,7 +62,7 @@ const Login = () => {
                             </div>
                             <input
                                 type="text"
-                                placeholder="Email or Name"
+                                placeholder="Name, Phone or Email"
                                 className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-sm"
                                 value={form.identifier}
                                 onChange={e => setForm({ ...form, identifier: e.target.value })}

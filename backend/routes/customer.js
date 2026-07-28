@@ -30,7 +30,8 @@ router.get('/insights', authenticateToken, async (req, res) => {
 router.post('/topup', authenticateToken, Validation.topup, async (req, res) => {
     try {
         if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
-        const result = await CustomerService.topUp(req.user.id, req.body.amount, req.body.password);
+        const { amount, password, isDemoCard, cardBrand, cardLast4 } = req.body;
+        const result = await CustomerService.topUp(req.user.id, amount, password, { isDemoCard, cardBrand, cardLast4 });
         return ApiResponse.success(res, "Topup successful", result);
     } catch (err) {
         return handleRouteError(res, err);

@@ -64,7 +64,8 @@ class AuthService {
                 [Op.or]: [
                     { email: normalizedIdentifier.toLowerCase() },
                     { phone: normalizedIdentifier },
-                    { name: normalizedIdentifier }
+                    { name: { [Op.iLike]: normalizedIdentifier } },
+                    { name: { [Op.iLike]: `%${normalizedIdentifier}%` } }
                 ]
             }
         });
