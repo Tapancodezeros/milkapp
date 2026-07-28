@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Phone, Mail, UserPlus, Briefcase, Smile, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { API_BASE_URL } from '../api/config';
+import { getAuthToken, getAuthUser, getDashboardPath } from '../utils/auth';
 
 const Register = () => {
     const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', role: 'customer' });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = getAuthToken();
+        const user = getAuthUser();
+        if (token && user?.role) {
+            navigate(getDashboardPath(user.role), { replace: true });
+        }
+    }, [navigate]);
 
     const handleRegister = async (e) => {
         e.preventDefault();

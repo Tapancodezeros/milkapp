@@ -9,7 +9,8 @@ import {
     Plus,
     Printer,
     Download,
-    TriangleAlert
+    TriangleAlert,
+    Lock
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -23,6 +24,9 @@ import SubscriptionItem from '../components/customer/SubscriptionItem';
 import CustomerTransactions from '../components/customer/CustomerTransactions';
 import Modal from '../components/shared/Modal';
 import ProfileModal from '../components/shared/ProfileModal';
+import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
+import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
+import RainPreferencesModal from '../components/customer/RainPreferencesModal';
 import { API_BASE_URL } from '../api/config';
 
 const CustomerDashboard = () => {
@@ -39,6 +43,7 @@ const CustomerDashboard = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [form, setForm] = useState({ quantity: '', duration: '7_days' });
     const [topupAmount, setTopupAmount] = useState('');
+    const [walletPassword, setWalletPassword] = useState('');
     const [showTopup, setShowTopup] = useState(false);
     const [showWithdraw, setShowWithdraw] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +61,18 @@ const CustomerDashboard = () => {
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState(null);
     const [txFilter, setTxFilter] = useState('all');
+    const [weatherAdvisory, setWeatherAdvisory] = useState(null);
+    const [showRainModal, setShowRainModal] = useState(false);
     const navigate = useNavigate();
+
+    const fetchWeatherAdvisory = React.useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/weather/advisory`);
+            setWeatherAdvisory(res.data.data);
+        } catch (err) {
+            console.error("Weather Advisory Fetch Error:", err);
+        }
+    }, []);
 
     const handleExportReceipt = () => {
         if (!selectedReceipt) return;
@@ -121,8 +137,8 @@ const CustomerDashboard = () => {
         return true;
     });
 
-    const token = sessionStorage.getItem('token');
-    const user = JSON.parse(sessionStorage.getItem('user'));
+    const token = getAuthToken();
+    const user = getAuthUser();
     const savedVendorIds = savedVendors.map((vendor) => vendor.id);
 
     const fetchMarketData = React.useCallback(async () => {
@@ -242,7 +258,8 @@ const CustomerDashboard = () => {
         fetchSubscriptions();
         fetchProfile();
         fetchInsights();
-    }, [fetchInsights, fetchMarketData, fetchTransactions, fetchSubscriptions, fetchProfile, navigate, token, user?.role]);
+        fetchWeatherAdvisory();
+    }, [fetchInsights, fetchMarketData, fetchTransactions, fetchSubscriptions, fetchProfile, fetchWeatherAdvisory, navigate, token, user?.role]);
 
     useEffect(() => {
         try {
@@ -272,7 +289,7 @@ const CustomerDashboard = () => {
     };
 
     const openVendorAction = (vendor, nextAction) => {
-        setForm({ quantity: '', duration: '7_days' });
+        setForm({ quantity: '', duration: '7_days', deliveryTime: '07:00 AM' });
         setSelectedVendor(vendor);
         setAction(nextAction);
     };
@@ -335,14 +352,18 @@ const CustomerDashboard = () => {
         if (walletBalance + amt > 50000) {
             return toast.error(`Wallet balance cannot exceed ₹50,000. Current: ₹${walletBalance}`);
         }
+        if (!walletPassword) {
+            return toast.error("Please enter your account password");
+        }
 
         setActionLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.post(`${API_BASE_URL}/customer/topup`, { amount: amt }, config);
+            await axios.post(`${API_BASE_URL}/customer/topup`, { amount: amt, password: walletPassword }, config);
             toast.success(`₹${amt} added to your wallet`);
             setShowTopup(false);
             setTopupAmount('');
+            setWalletPassword('');
             fetchProfile();
             fetchInsights();
         } catch (err) {
@@ -361,14 +382,18 @@ const CustomerDashboard = () => {
         if (amt > walletBalance) {
             return toast.error("Insufficient balance");
         }
+        if (!walletPassword) {
+            return toast.error("Please enter your account password");
+        }
 
         setActionLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.post(`${API_BASE_URL}/customer/withdraw`, { amount: amt }, config);
+            await axios.post(`${API_BASE_URL}/customer/withdraw`, { amount: amt, password: walletPassword }, config);
             toast.success(`₹${amt} withdrawn from wallet`);
             setShowWithdraw(false);
             setTopupAmount('');
+            setWalletPassword('');
             fetchProfile();
             fetchInsights();
         } catch (err) {
@@ -382,11 +407,18 @@ const CustomerDashboard = () => {
         e.preventDefault();
         const qty = parseFloat(form.quantity);
 
-        if (action === 'buy' && (qty < 0.1 || qty > 100)) {
+        if (action === 'buy' && (isNaN(qty) || qty < 0.1 || qty > 100)) {
             return toast.error("Purchase quantity must be between 0.1L and 100L");
         }
-        if (action === 'subscribe' && (qty < 0.1 || qty > 50)) {
+        if (action === 'subscribe' && (isNaN(qty) || qty < 0.1 || qty > 50)) {
             return toast.error("Daily quantity must be between 0.1L and 50L");
+        }
+
+        if (action === 'buy' && selectedVendor) {
+            const estimatedCost = qty * (selectedVendor.rate || 0);
+            if (walletBalance < estimatedCost) {
+                return toast.error(`Insufficient wallet balance. Total cost: ₹${estimatedCost.toFixed(2)}, Wallet balance: ₹${walletBalance.toFixed(2)}. Please add money to your wallet.`);
+            }
         }
         setActionLoading(true);
         try {
@@ -395,14 +427,17 @@ const CustomerDashboard = () => {
             const payload = {
                 vendorId: selectedVendor.id,
                 quantity: qty,
-                ...(action === 'subscribe' && { duration: form.duration })
+                ...(action === 'subscribe' && {
+                    duration: form.duration,
+                    deliveryTime: form.deliveryTime || '07:00 AM'
+                })
             };
 
             await axios.post(endpoint, payload, config);
             toast.success(action === 'buy' ? "Purchase successful! Deducted from wallet." : "Subscription initialized!");
             setSelectedVendor(null);
             setAction(null);
-            setForm({ quantity: '', duration: '7_days' });
+            setForm({ quantity: '', duration: '7_days', deliveryTime: '07:00 AM' });
             if (action === 'buy') {
                 fetchProfile();
                 fetchTransactions();
@@ -493,13 +528,13 @@ const CustomerDashboard = () => {
     };
 
     const handleLogout = () => {
-        sessionStorage.clear();
+        clearAuth();
         navigate('/');
     };
 
-    // Analytics: Monthly Spending & Volume
+    // Analytics: Monthly Spending & Volume (excludes undelivered/refunded orders)
     const analyticsMap = transactions.reduce((acc, t) => {
-        if (!t.date) return acc;
+        if (!t.date || t.deliveryStatus === 'not_delivered' || t.status !== 'completed') return acc;
         const month = t.date.substring(0, 7); // YYYY-MM
         if (!acc[month]) acc[month] = { revenue: 0, volume: 0 };
         acc[month].revenue += (parseFloat(t.amount) || 0);
@@ -521,7 +556,10 @@ const CustomerDashboard = () => {
             };
         });
 
-    const totalSpent = transactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalSpent = transactions.reduce((sum, t) => {
+        if (t.deliveryStatus === 'not_delivered' || t.status !== 'completed') return sum;
+        return sum + (parseFloat(t.amount) || 0);
+    }, 0);
     const activeSubCount = subscriptions.filter(s => s && s.status === 'active').length;
 
     if (loading && vendors.length === 0) {
@@ -542,7 +580,7 @@ const CustomerDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative overflow-x-hidden transition-colors duration-500">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative transition-colors duration-500">
             {/* Background Decorations */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50/50 dark:bg-blue-900/10 rounded-full blur-3xl -mr-64 -mt-64"></div>
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 dark:bg-indigo-900/10 rounded-full blur-3xl -ml-64 -mb-64"></div>
@@ -561,6 +599,13 @@ const CustomerDashboard = () => {
             />
 
             <main className="relative z-10 flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-20">
+
+                <RainyWeatherBanner
+                    advisory={weatherAdvisory}
+                    userRole="customer"
+                    customerPrefs={profileData}
+                    onOpenRainModal={() => setShowRainModal(true)}
+                />
 
                 <CustomerHero
                     walletBalance={typeof walletBalance === 'number' ? walletBalance : 0}
@@ -643,7 +688,7 @@ const CustomerDashboard = () => {
                                 {subscriptions.length}
                             </div>
                         </div>
-                        <div className="space-y-8 max-h-[1000px] overflow-y-auto custom-scrollbar pr-2">
+                        <div className="space-y-8">
                             {subscriptions.map(sub => (
                                 <SubscriptionItem
                                     key={sub.id}
@@ -710,11 +755,11 @@ const CustomerDashboard = () => {
             {/* MODALS */}
             <Modal
                 isOpen={showTopup}
-                onClose={() => setShowTopup(false)}
+                onClose={() => { setShowTopup(false); setWalletPassword(''); }}
                 title="Add Money"
             >
-                <form onSubmit={handleTopup} className="space-y-10">
-                    <div className="space-y-6">
+                <form onSubmit={handleTopup} className="space-y-6">
+                    <div className="space-y-4">
                         <div className="flex justify-between items-end px-2">
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
                             <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Max Total: 50,000</span>
@@ -725,7 +770,7 @@ const CustomerDashboard = () => {
                                 type="number"
                                 value={topupAmount}
                                 onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-10 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-5xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-8 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-4xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
                                 placeholder="0.00"
                                 autoFocus
                             />
@@ -741,6 +786,20 @@ const CustomerDashboard = () => {
                                     +₹{amt}
                                 </button>
                             ))}
+                        </div>
+
+                        <div className="pt-2 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
+                                <Lock size={12} /> Confirm Account Password
+                            </label>
+                            <input
+                                type="password"
+                                value={walletPassword}
+                                onChange={(e) => setWalletPassword(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-4 rounded-2xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold text-sm text-slate-900 dark:text-white shadow-inner"
+                                placeholder="Enter password to authorize"
+                                required
+                            />
                         </div>
                     </div>
                     <button
@@ -758,11 +817,11 @@ const CustomerDashboard = () => {
 
             <Modal
                 isOpen={showWithdraw}
-                onClose={() => setShowWithdraw(false)}
+                onClose={() => { setShowWithdraw(false); setWalletPassword(''); }}
                 title="Withdraw Money"
             >
-                <form onSubmit={handleWithdraw} className="space-y-10">
-                    <div className="space-y-6">
+                <form onSubmit={handleWithdraw} className="space-y-6">
+                    <div className="space-y-4">
                         <div className="flex justify-between items-end px-2">
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Amount (₹)</label>
                             <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase">Available: ₹{walletBalance}</span>
@@ -773,9 +832,23 @@ const CustomerDashboard = () => {
                                 type="number"
                                 value={topupAmount}
                                 onChange={(e) => setTopupAmount(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-10 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-5xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-8 pl-16 rounded-[2.5rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-4xl text-slate-900 dark:text-white shadow-inner group-hover:border-slate-200 dark:group-hover:border-slate-700"
                                 placeholder="0.00"
                                 autoFocus
+                            />
+                        </div>
+
+                        <div className="pt-2 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
+                                <Lock size={12} /> Confirm Account Password
+                            </label>
+                            <input
+                                type="password"
+                                value={walletPassword}
+                                onChange={(e) => setWalletPassword(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-4 rounded-2xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-bold text-sm text-slate-900 dark:text-white shadow-inner"
+                                placeholder="Enter password to authorize"
+                                required
                             />
                         </div>
                     </div>
@@ -794,7 +867,7 @@ const CustomerDashboard = () => {
 
             <Modal
                 isOpen={!!selectedVendor}
-                onClose={() => { setSelectedVendor(null); setAction(null); setForm({ quantity: '', duration: '7_days' }); }}
+                onClose={() => { setSelectedVendor(null); setAction(null); setForm({ quantity: '', duration: '7_days', deliveryTime: '07:00 AM' }); }}
                 title={action === 'buy' ? 'Buy Milk' : 'Subscribe'}
             >
                 <div className="mb-10 p-8 bg-blue-50/50 dark:bg-blue-900/20 rounded-[2.5rem] border border-blue-100/50 dark:border-blue-900/30 flex items-center justify-between shadow-inner transition-colors duration-500">
@@ -828,20 +901,39 @@ const CustomerDashboard = () => {
                     </div>
 
                     {action === 'subscribe' && (
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] ml-4">Duration</label>
-                            <div className="grid grid-cols-1 gap-4">
-                                <select
-                                    value={form.duration}
-                                    onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-6 rounded-[2rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-sm text-slate-700 dark:text-slate-300 appearance-none cursor-pointer shadow-inner"
-                                >
-                                    <option value="7_days" className="dark:bg-slate-900">7 Days</option>
-                                    <option value="1_month" className="dark:bg-slate-900">30 Days</option>
-                                    <option value="3_months" className="dark:bg-slate-900">90 Days</option>
-                                </select>
+                        <>
+                            <div className="space-y-6">
+                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] ml-4">Duration</label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <select
+                                        value={form.duration}
+                                        onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                                        className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-6 rounded-[2rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-sm text-slate-700 dark:text-slate-300 appearance-none cursor-pointer shadow-inner"
+                                    >
+                                        <option value="7_days" className="dark:bg-slate-900">7 Days</option>
+                                        <option value="1_month" className="dark:bg-slate-900">30 Days</option>
+                                        <option value="3_months" className="dark:bg-slate-900">90 Days</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+
+                            <div className="space-y-6">
+                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] ml-4">Preferred Delivery Time</label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <select
+                                        value={form.deliveryTime || '07:00 AM'}
+                                        onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
+                                        className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100/80 dark:border-slate-800 p-6 rounded-[2rem] outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-slate-800 transition-all font-black text-sm text-slate-700 dark:text-slate-300 appearance-none cursor-pointer shadow-inner"
+                                    >
+                                        <option value="06:00 AM" className="dark:bg-slate-900">06:00 AM (Early Morning)</option>
+                                        <option value="07:00 AM" className="dark:bg-slate-900">07:00 AM (Morning)</option>
+                                        <option value="08:00 AM" className="dark:bg-slate-900">08:00 AM (Late Morning)</option>
+                                        <option value="05:00 PM" className="dark:bg-slate-900">05:00 PM (Evening)</option>
+                                        <option value="06:00 PM" className="dark:bg-slate-900">06:00 PM (Late Evening)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </>
                     )}
 
 
@@ -962,7 +1054,16 @@ const CustomerDashboard = () => {
                 role="customer"
                 onUpdate={(updatedData) => {
                     setProfileData(prev => ({ ...prev, ...updatedData }));
-                    sessionStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
+                    setAuth(token, { ...user, name: updatedData.name, phone: updatedData.phone });
+                }}
+            />
+
+            <RainPreferencesModal
+                isOpen={showRainModal}
+                onClose={() => setShowRainModal(false)}
+                customerPrefs={profileData}
+                onSaveSuccess={(updatedPrefs) => {
+                    setProfileData(prev => ({ ...prev, ...updatedPrefs }));
                 }}
             />
         </div>

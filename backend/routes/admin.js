@@ -37,7 +37,11 @@ router.get('/overview', async (req, res) => {
         const totalVendors = await Vendor.count();
 
         const revenueResult = await Transaction.sum('amount', {
-            where: { status: 'completed', ...dateFilter }
+            where: {
+                status: 'completed',
+                deliveryStatus: { [Op.ne]: 'not_delivered' },
+                ...dateFilter
+            }
         });
         const totalRevenue = revenueResult || 0;
 

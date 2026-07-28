@@ -8,6 +8,7 @@ const subscriptionRoutes = require('./subscription');
 const transactionRoutes = require('./transaction');
 const commonRoutes = require('./common');
 const adminRoutes = require('./admin');
+const weatherRoutes = require('./weather');
 
 router.use('/', authRoutes);
 router.use('/customer', customerRoutes);
@@ -16,5 +17,6 @@ router.use('/', subscriptionRoutes);
 router.use('/', transactionRoutes);
 router.use('/vendors', commonRoutes);
 router.use('/admin', adminRoutes);
+router.use('/weather', weatherRoutes);
 
 module.exports = router;

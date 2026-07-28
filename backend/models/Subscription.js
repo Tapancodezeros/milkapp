@@ -8,6 +8,8 @@ const Subscription = sequelize.define('Subscription', {
     startDate: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
     endDate: { type: DataTypes.DATEONLY, allowNull: false },
     fixedRate: { type: DataTypes.FLOAT, allowNull: false },
+    deliveryTime: { type: DataTypes.STRING, defaultValue: '07:00 AM', allowNull: true },
+    rainPausedDates: { type: DataTypes.TEXT, defaultValue: '[]' },
     customerId: { type: DataTypes.INTEGER, allowNull: false },
     vendorId: { type: DataTypes.INTEGER, allowNull: false }
 });

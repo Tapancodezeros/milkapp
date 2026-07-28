@@ -5,7 +5,7 @@ const AppError = require('../utils/appError');
 
 class CustomerService {
     async getProfile(id) {
-        const customer = await Customer.findByPk(id, { attributes: ['id', 'name', 'email', 'phone', 'walletBalance'] });
+        const customer = await Customer.findByPk(id, { attributes: ['id', 'name', 'email', 'phone', 'walletBalance', 'rainproofPackaging', 'rainDropoffInstructions'] });
 
         if (!customer) {
             throw new AppError("Customer not found", 404);
@@ -35,7 +35,11 @@ class CustomerService {
                 order: [['date', 'ASC'], ['createdAt', 'ASC']]
             }),
             Transaction.findAll({
-                where: { customerId: id, status: 'completed' },
+                where: {
+                    customerId: id,
+                    status: 'completed',
+                    deliveryStatus: { [Op.ne]: 'not_delivered' }
+                },
                 include: [{ model: Vendor, attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable'] }],
                 order: [['date', 'DESC'], ['createdAt', 'DESC']]
             }),
@@ -157,16 +161,32 @@ class CustomerService {
         };
     }
 
-    async topUp(id, amount) {
+    async topUp(id, amount, password) {
+        const topupAmt = parseFloat(amount);
+        if (isNaN(topupAmt) || !Number.isFinite(topupAmt) || topupAmt < 10) {
+            throw new AppError("Invalid topup amount. Minimum topup is ₹10.", 400);
+        }
+
+        if (!password) {
+            throw new AppError("Password is required for top-up", 400);
+        }
+
         const customer = await Customer.findByPk(id);
         if (!customer) {
             throw new AppError("Customer not found", 404);
         }
 
-        const newBalance = (parseFloat(customer.walletBalance) || 0) + parseFloat(amount);
+        const validPassword = await bcrypt.compare(password, customer.password);
+        if (!validPassword) {
+            throw new AppError("Invalid password. Please enter your correct account password.", 401);
+        }
+
+        const currentBalance = parseFloat(customer.walletBalance) || 0;
+        const newBalance = Math.round((currentBalance + topupAmt) * 100) / 100;
 
         if (newBalance > 50000) {
-            throw new AppError(`Wallet balance cannot exceed ₹50,000. Current: ₹${customer.walletBalance}, Max top-up allowed: ₹${50000 - customer.walletBalance}`);
+            const maxAllowed = Math.max(0, Math.round((50000 - currentBalance) * 100) / 100);
+            throw new AppError(`Wallet balance cannot exceed ₹50,000. Current: ₹${currentBalance.toFixed(2)}, Max top-up allowed: ₹${maxAllowed.toFixed(2)}`, 400);
         }
 
         customer.walletBalance = newBalance;
@@ -174,20 +194,34 @@ class CustomerService {
         return { balance: customer.walletBalance };
     }
 
-    async withdraw(id, amount) {
+    async withdraw(id, amount, password) {
+        const withdrawAmt = parseFloat(amount);
+        if (isNaN(withdrawAmt) || !Number.isFinite(withdrawAmt) || withdrawAmt < 10) {
+            throw new AppError("Invalid withdrawal amount. Minimum withdrawal is ₹10.", 400);
+        }
+
+        if (!password) {
+            throw new AppError("Password is required for withdrawal", 400);
+        }
+
         const customer = await Customer.findByPk(id);
         if (!customer) {
             throw new AppError("Customer not found", 404);
         }
 
-        const balance = parseFloat(customer.walletBalance) || 0;
-        const withdrawAmount = parseFloat(amount);
-
-        if (balance < withdrawAmount) {
-            throw new AppError(`Insufficient funds. Current balance: ₹${balance}`, 400);
+        const validPassword = await bcrypt.compare(password, customer.password);
+        if (!validPassword) {
+            throw new AppError("Invalid password. Please enter your correct account password.", 401);
         }
 
-        customer.walletBalance = balance - withdrawAmount;
+        const currentBalance = parseFloat(customer.walletBalance) || 0;
+
+        if (currentBalance < withdrawAmt) {
+            throw new AppError(`Insufficient funds. Current balance: ₹${currentBalance.toFixed(2)}`, 400);
+        }
+
+        const newBalance = Math.round((currentBalance - withdrawAmt) * 100) / 100;
+        customer.walletBalance = newBalance;
         await customer.save();
         return { balance: customer.walletBalance };
     }
@@ -221,6 +255,8 @@ class CustomerService {
 
         if (name) customer.name = name;
         if (phone) customer.phone = phone;
+        if (data.rainproofPackaging !== undefined) customer.rainproofPackaging = Boolean(data.rainproofPackaging);
+        if (data.rainDropoffInstructions !== undefined) customer.rainDropoffInstructions = data.rainDropoffInstructions;
         if (password) {
             customer.password = await bcrypt.hash(password, 10);
         }
@@ -230,7 +266,10 @@ class CustomerService {
             id: customer.id,
             name: customer.name,
             email: customer.email,
-            phone: customer.phone
+            phone: customer.phone,
+            walletBalance: customer.walletBalance,
+            rainproofPackaging: customer.rainproofPackaging,
+            rainDropoffInstructions: customer.rainDropoffInstructions
         };
     }
 }

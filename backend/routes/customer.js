@@ -30,7 +30,7 @@ router.get('/insights', authenticateToken, async (req, res) => {
 router.post('/topup', authenticateToken, Validation.topup, async (req, res) => {
     try {
         if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
-        const result = await CustomerService.topUp(req.user.id, req.body.amount);
+        const result = await CustomerService.topUp(req.user.id, req.body.amount, req.body.password);
         return ApiResponse.success(res, "Topup successful", result);
     } catch (err) {
         return handleRouteError(res, err);
@@ -50,7 +50,7 @@ router.put('/profile', authenticateToken, Validation.updateProfile, async (req, 
 router.post('/withdraw', authenticateToken, Validation.withdraw, async (req, res) => {
     try {
         if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Not a customer", 403);
-        const result = await CustomerService.withdraw(req.user.id, req.body.amount);
+        const result = await CustomerService.withdraw(req.user.id, req.body.amount, req.body.password);
         return ApiResponse.success(res, "Withdrawal successful", result);
     } catch (err) {
         return handleRouteError(res, err);

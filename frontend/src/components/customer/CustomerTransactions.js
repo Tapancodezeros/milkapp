@@ -80,9 +80,14 @@ const CustomerTransactions = ({ transactions, onVerify, onPay, onShowReceipt }) 
                                             </button>
                                         </div>
                                     ) : t.deliveryStatus === 'not_delivered' ? (
-                                        <span className="flex items-center justify-center gap-2 text-red-600 dark:text-red-400 font-black text-[10px] uppercase tracking-widest bg-red-50/50 dark:bg-red-900/10 py-2 px-4 rounded-2xl border border-red-100/50 dark:border-red-900/30 mx-auto w-fit">
-                                            Not Delivered
-                                        </span>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="flex items-center justify-center gap-2 text-red-600 dark:text-red-400 font-black text-[10px] uppercase tracking-widest bg-red-50/50 dark:bg-red-900/10 py-2 px-4 rounded-2xl border border-red-100/50 dark:border-red-900/30 mx-auto w-fit">
+                                                Not Delivered
+                                            </span>
+                                            <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                                                (Refunded to Wallet)
+                                            </span>
+                                        </div>
                                     ) : (
                                         <div className="flex flex-col gap-3 items-center">
                                             <button

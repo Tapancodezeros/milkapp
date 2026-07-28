@@ -11,6 +11,9 @@ import FulfillmentEngine from '../components/vendor/FulfillmentEngine';
 import AnalyticsChart from '../components/vendor/AnalyticsChart';
 import LedgerStream from '../components/shared/LedgerStream';
 import ProfileModal from '../components/shared/ProfileModal';
+import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
+import RainyWeatherControl from '../components/vendor/RainyWeatherControl';
+import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 
 import { API_BASE_URL } from '../api/config';
 
@@ -27,10 +30,20 @@ const VendorDashboard = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [paginatedSales, setPaginatedSales] = useState([]);
     const [showProfile, setShowProfile] = useState(false);
+    const [weatherAdvisory, setWeatherAdvisory] = useState(null);
     const navigate = useNavigate();
 
-    const token = sessionStorage.getItem('token');
-    const user = JSON.parse(sessionStorage.getItem('user'));
+    const token = getAuthToken();
+    const user = getAuthUser();
+
+    const fetchWeatherAdvisory = React.useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/weather/advisory`);
+            setWeatherAdvisory(res.data.data);
+        } catch (err) {
+            console.error("Weather Advisory Fetch Error:", err);
+        }
+    }, []);
 
     const fetchGlobalData = React.useCallback(async () => {
         try {
@@ -50,13 +63,14 @@ const VendorDashboard = () => {
             setSales(salesRes.data.data);
             setSubscriptions(subRes.data.data);
             setMonthlyReports(reportsRes.data.data);
+            fetchWeatherAdvisory();
         } catch (err) {
             console.error("Global Fetch Error:", err);
             toast.error("Failed to load core data.");
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, [token, fetchWeatherAdvisory]);
 
     const showConfirmToast = (message, onConfirm, type = 'danger') => {
         toast((t) => (
@@ -181,7 +195,7 @@ const VendorDashboard = () => {
     };
 
     const handleLogout = () => {
-        sessionStorage.clear();
+        clearAuth();
         navigate('/');
     };
 
@@ -262,6 +276,12 @@ const VendorDashboard = () => {
             />
 
             <main className="flex-1 p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-10">
+                <RainyWeatherBanner
+                    advisory={weatherAdvisory}
+                    userRole="vendor"
+                    onUpdateAdvisory={(newAdvisory) => setWeatherAdvisory(newAdvisory)}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="relative group cursor-pointer" onClick={toggleAvailability}>
                         <StatsCard label="Operating Mode" val={stats.isAvailable ? 'Active' : 'Holiday'} icon={stats.isAvailable ? Zap : Palmtree} color={stats.isAvailable ? 'emerald' : 'orange'} sub="Click to toggle" />
@@ -276,6 +296,7 @@ const VendorDashboard = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <div className="lg:col-span-4 space-y-10">
+                        <RainyWeatherControl onRefreshData={() => setRefreshKey(k => k + 1)} />
                         <QuickControls
                             addStock={addStock} setAddStock={setAddStock}
                             newRate={newRate} setNewRate={setNewRate}
@@ -316,7 +337,7 @@ const VendorDashboard = () => {
                 role="vendor"
                 onUpdate={(updatedData) => {
                     setStats(prev => ({ ...prev, ...updatedData }));
-                    sessionStorage.setItem('user', JSON.stringify({ ...user, name: updatedData.name, phone: updatedData.phone }));
+                    setAuth(token, { ...user, name: updatedData.name, phone: updatedData.phone });
                 }}
             />
         </div>

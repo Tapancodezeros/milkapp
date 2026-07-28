@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useTheme } from './context/ThemeContext';
+import { getAuthToken, getAuthUser, getDashboardPath } from './utils/auth';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -11,12 +12,23 @@ import VendorDashboard from './pages/VendorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
-const PrivateRoute = ({ children, role }) => {
-  const token = sessionStorage.getItem('token');
-  const user = JSON.parse(sessionStorage.getItem('user'));
+const PublicRoute = ({ children }) => {
+  const token = getAuthToken();
+  const user = getAuthUser();
 
-  if (!token) return <Navigate to="/" />;
-  if (role && user.role !== role) return <Navigate to="/" />; // Redirect if unauthorized role
+  if (token && user?.role) {
+    return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
+
+  return children;
+};
+
+const PrivateRoute = ({ children, role }) => {
+  const token = getAuthToken();
+  const user = getAuthUser();
+
+  if (!token || !user) return <Navigate to="/" replace />;
+  if (role && user.role !== role) return <Navigate to="/" replace />;
 
   return children;
 };
@@ -63,9 +75,9 @@ const AppContent = () => {
         }}
       />
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route

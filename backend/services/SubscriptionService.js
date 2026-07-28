@@ -4,7 +4,7 @@ const { UserRole } = require('../utils/constants');
 const AppError = require('../utils/appError');
 
 class SubscriptionService {
-    async subscribe(customerId, vendorId, quantity, duration) {
+    async subscribe(customerId, vendorId, quantity, duration, deliveryTime = '07:00 AM') {
         const vendor = await Vendor.findByPk(vendorId);
         if (!vendor) {
             throw new AppError("Vendor not found", 404);
@@ -38,6 +38,7 @@ class SubscriptionService {
             vendorId,
             quantity,
             duration,
+            deliveryTime: deliveryTime || '07:00 AM',
             startDate: startDate.toISOString().split('T')[0],
             endDate: endDate.toISOString().split('T')[0],
             fixedRate: vendor.rate
@@ -60,7 +61,7 @@ class SubscriptionService {
     }
 
     async updateSubscription(id, data, userId, role) {
-        const { status, quantity } = data;
+        const { status, quantity, deliveryTime } = data;
         const sub = await Subscription.findByPk(id);
 
         if (!sub) {
@@ -76,6 +77,7 @@ class SubscriptionService {
 
         if (status) sub.status = status;
         if (quantity !== undefined) sub.quantity = quantity;
+        if (deliveryTime !== undefined) sub.deliveryTime = deliveryTime;
         await sub.save();
         return sub;
     }

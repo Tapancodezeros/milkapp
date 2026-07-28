@@ -7,6 +7,8 @@ const Customer = sequelize.define('Customer', {
     email: { type: DataTypes.STRING, allowNull: true, unique: true },
     password: { type: DataTypes.STRING, allowNull: true },
     walletBalance: { type: DataTypes.FLOAT, defaultValue: 0 },
+    rainproofPackaging: { type: DataTypes.BOOLEAN, defaultValue: false },
+    rainDropoffInstructions: { type: DataTypes.STRING, allowNull: true },
     resetToken: { type: DataTypes.STRING, allowNull: true },
     resetTokenExpiry: { type: DataTypes.DATE, allowNull: true },
 });

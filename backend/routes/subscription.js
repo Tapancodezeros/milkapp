@@ -11,8 +11,8 @@ const handleRouteError = require('../utils/handleRouteError');
 router.post('/subscribe', authenticateToken, Validation.subscribe, async (req, res) => {
     try {
         if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Only customers can subscribe", 403);
-        const { vendorId, quantity, duration } = req.body;
-        const sub = await SubscriptionService.subscribe(req.user.id, vendorId, quantity, duration);
+        const { vendorId, quantity, duration, deliveryTime } = req.body;
+        const sub = await SubscriptionService.subscribe(req.user.id, vendorId, quantity, duration, deliveryTime);
         return ApiResponse.success(res, "Subscribed successfully", sub, 201);
     } catch (err) {
         return handleRouteError(res, err);

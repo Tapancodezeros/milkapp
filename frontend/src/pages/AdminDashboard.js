@@ -28,6 +28,8 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
+import { getAuthToken, clearAuth } from '../utils/auth';
 import { API_BASE_URL } from '../api/config';
 
 const AdminDashboard = () => {
@@ -49,13 +51,23 @@ const AdminDashboard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, role: '', id: '' });
+    const [weatherAdvisory, setWeatherAdvisory] = useState(null);
 
     const navigate = useNavigate();
 
-    const fetchItems = async (tab) => {
+    const fetchWeatherAdvisory = React.useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/weather/advisory`);
+            setWeatherAdvisory(res.data.data);
+        } catch (err) {
+            console.error("Weather Advisory Fetch Error:", err);
+        }
+    }, []);
+
+    const fetchItems = React.useCallback(async (tab) => {
         setLoading(true);
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             const url = tab === 'overview' ? 'overview' : tab;
             const params = {};
             if (tab === 'overview') params.period = overviewFilter;
@@ -81,17 +93,18 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [overviewFilter, transactionFilter, searchQuery, navigate]);
 
     useEffect(() => {
         setCurrentPage(1);
         fetchItems(activeTab);
-    }, [activeTab, overviewFilter, transactionFilter, searchQuery]);
+        fetchWeatherAdvisory();
+    }, [activeTab, fetchItems, fetchWeatherAdvisory]);
 
     const handleUpdateUser = async (e) => {
         e.preventDefault();
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             const { role, data } = editModal;
             await axios.put(`${API_BASE_URL}/admin/user/${role}/${data.id}`, data, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -106,7 +119,7 @@ const AdminDashboard = () => {
 
     const handleResetPassword = async (role, id) => {
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             const res = await axios.post(`${API_BASE_URL}/admin/user/${role}/${id}/reset-password`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -128,7 +141,7 @@ const AdminDashboard = () => {
     const executeDelete = async () => {
         const { role, id } = deleteModal;
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             await axios.delete(`${API_BASE_URL}/admin/user/${role}/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -143,7 +156,7 @@ const AdminDashboard = () => {
     const handleAddUser = async (e) => {
         e.preventDefault();
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             await axios.post(`${API_BASE_URL}/admin/user/create`, newUserData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -159,7 +172,7 @@ const AdminDashboard = () => {
     };
 
     const handleLogout = () => {
-        sessionStorage.clear();
+        clearAuth();
         navigate('/');
     };
 
@@ -362,7 +375,13 @@ const AdminDashboard = () => {
                 </header>
 
                 {/* Content */}
-                <div className="p-8 overflow-auto">
+                <div className="p-8">
+                    <RainyWeatherBanner
+                        advisory={weatherAdvisory}
+                        userRole="admin"
+                        onUpdateAdvisory={(newAdvisory) => setWeatherAdvisory(newAdvisory)}
+                    />
+
                     <div className="mb-8">
                         <h2 className={`text-2xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activeTab === 'overview' ? 'Dashboard Overview' : activeTab}</h2>
                         <p className="text-slate-500 text-sm mt-1">{activeTab === 'overview' ? 'View key metrics and system performance' : `Manage and monitor all system ${activeTab}`}</p>

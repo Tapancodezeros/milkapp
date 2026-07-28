@@ -43,6 +43,151 @@ const openApiSpec = {
           details: { type: 'object', nullable: true },
         },
       },
+      Customer: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'John Doe' },
+          phone: { type: 'string', example: '+1234567890' },
+          email: { type: 'string', example: 'john@example.com' },
+          walletBalance: { type: 'number', example: 500.0 },
+          rainproofPackaging: { type: 'boolean', example: false },
+          rainDropoffInstructions: { type: 'string', example: 'Leave under covered porch' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      Vendor: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Pure Milk Dairy' },
+          phone: { type: 'string', example: '+9876543210' },
+          email: { type: 'string', example: 'vendor@dairy.com' },
+          rate: { type: 'number', example: 60.0 },
+          availableMilk: { type: 'number', example: 120.5 },
+          isAvailable: { type: 'boolean', example: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      Subscription: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          quantity: { type: 'number', example: 1.5 },
+          status: { type: 'string', enum: ['active', 'paused', 'cancelled'], example: 'active' },
+          duration: { type: 'string', enum: ['7_days', '1_month', '3_months'], example: '1_month' },
+          startDate: { type: 'string', format: 'date', example: '2026-07-27' },
+          endDate: { type: 'string', format: 'date', example: '2026-08-27' },
+          fixedRate: { type: 'number', example: 60.0 },
+          rainPausedDates: { type: 'string', example: '[]' },
+          customerId: { type: 'integer', example: 1 },
+          vendorId: { type: 'integer', example: 1 },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      Transaction: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          date: { type: 'string', format: 'date', example: '2026-07-27' },
+          quantity: { type: 'number', example: 2.0 },
+          amount: { type: 'number', example: 120.0 },
+          status: { type: 'string', enum: ['pending', 'completed'], example: 'completed' },
+          type: { type: 'string', enum: ['subscription', 'purchase'], example: 'purchase' },
+          deliveryStatus: { type: 'string', enum: ['pending', 'delivered', 'not_delivered'], example: 'pending' },
+          customerId: { type: 'integer', example: 1 },
+          vendorId: { type: 'integer', example: 1 },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      InventoryHistory: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          vendorId: { type: 'integer', example: 1 },
+          action: { type: 'string', example: 'add' },
+          amount: { type: 'number', example: 50.0 },
+          previousBalance: { type: 'number', example: 70.0 },
+          newBalance: { type: 'number', example: 120.0 },
+          createdAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      Admin: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          email: { type: 'string', example: 'admin@milkapp.com' },
+          createdAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      WeatherAdvisory: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          date: { type: 'string', format: 'date', example: '2026-07-27' },
+          isRainy: { type: 'boolean', example: true },
+          advisoryMessage: { type: 'string', example: 'Heavy rain expected' },
+          createdAt: { type: 'string', format: 'date-time' }
+        }
+      },
+      RegisterRequest: {
+        type: 'object',
+        required: ['name', 'phone', 'email', 'password', 'role'],
+        properties: {
+          name: { type: 'string', example: 'John Doe' },
+          phone: { type: 'string', example: '+1234567890' },
+          email: { type: 'string', format: 'email', example: 'john@example.com' },
+          password: { type: 'string', minLength: 6, example: 'secret123' },
+          role: { type: 'string', enum: ['customer', 'vendor'], example: 'customer' }
+        }
+      },
+      LoginRequest: {
+        type: 'object',
+        required: ['identifier', 'password', 'role'],
+        properties: {
+          identifier: { type: 'string', example: 'john@example.com' },
+          password: { type: 'string', example: 'secret123' },
+          role: { type: 'string', enum: ['customer', 'vendor', 'admin'], example: 'customer' }
+        }
+      },
+      TopupRequest: {
+        type: 'object',
+        required: ['amount', 'password'],
+        properties: {
+          amount: { type: 'number', minimum: 10, maximum: 50000, example: 500 },
+          password: { type: 'string', example: 'secret123' }
+        }
+      },
+      WithdrawRequest: {
+        type: 'object',
+        required: ['amount', 'password'],
+        properties: {
+          amount: { type: 'number', minimum: 10, example: 100 },
+          password: { type: 'string', example: 'secret123' }
+        }
+      },
+      CreateSubscriptionRequest: {
+        type: 'object',
+        required: ['vendorId', 'quantity', 'duration'],
+        properties: {
+          vendorId: { type: 'integer', example: 1 },
+          quantity: { type: 'number', minimum: 0.1, maximum: 50, example: 1.5 },
+          duration: { type: 'string', enum: ['7_days', '1_month', '3_months'], example: '1_month' },
+          deliveryTime: { type: 'string', example: '07:00 AM' }
+        }
+      },
+      BuyMilkRequest: {
+        type: 'object',
+        required: ['vendorId', 'quantity'],
+        properties: {
+          vendorId: { type: 'integer', example: 1 },
+          quantity: { type: 'number', minimum: 0.1, maximum: 100, example: 2.0 }
+        }
+      }
     },
   },
   tags: [
@@ -53,6 +198,7 @@ const openApiSpec = {
     { name: 'Subscription', description: 'Subscribe, list, update, cancel' },
     { name: 'Transaction', description: 'Buy, balance, transactions, delivery' },
     { name: 'Admin', description: 'User and data management (admin only)' },
+    { name: 'Weather', description: 'Rainy weather advisories, customer preferences, skip delivery' },
   ],
   paths: {
     '/register': {
@@ -346,7 +492,7 @@ const openApiSpec = {
         summary: 'Update subscription',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
-        requestBody: { content: { 'application/json': { schema: { type: 'object' } } },
+        requestBody: { content: { 'application/json': { schema: { type: 'object' } } } },
         responses: { 200: { description: 'Subscription updated' } },
       },
     },
@@ -549,8 +695,91 @@ const openApiSpec = {
         responses: { 200: { description: 'Reset link generated' }, 404: { description: 'User not found' } },
       },
     },
-  }
-  }
+    '/weather/advisory': {
+      get: {
+        tags: ['Weather'],
+        summary: 'Fetch weather advisory',
+        parameters: [
+          { name: 'vendorId', in: 'query', required: false, schema: { type: 'integer' } },
+        ],
+        responses: { 200: { description: 'Weather advisory data' } },
+      },
+    },
+    '/weather/toggle': {
+      post: {
+        tags: ['Weather'],
+        summary: 'Toggle rainy weather mode (Vendor/Admin)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  isRainyMode: { type: 'boolean' },
+                  severity: { type: 'string', enum: ['light', 'moderate', 'heavy'] },
+                  advisoryTitle: { type: 'string' },
+                  advisoryMessage: { type: 'string' },
+                  estimatedDelayMinutes: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Weather mode updated' } },
+      },
+    },
+    '/weather/customer-preferences': {
+      put: {
+        tags: ['Weather'],
+        summary: 'Update rain delivery preferences (Customer)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  rainproofPackaging: { type: 'boolean' },
+                  rainDropoffInstructions: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Preferences updated' } },
+      },
+    },
+    '/weather/skip-today': {
+      post: {
+        tags: ['Weather'],
+        summary: 'Skip subscription delivery today due to rain (Customer)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['subscriptionId'],
+                properties: {
+                  subscriptionId: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Delivery skipped for today' } },
+      },
+    },
+    '/weather/vendor-summary': {
+      get: {
+        tags: ['Weather'],
+        summary: 'Get vendor rain operation summary (Vendor)',
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: 'Vendor rain summary fetched' } },
+      },
+    },
+  },
 };
 
 module.exports = openApiSpec;

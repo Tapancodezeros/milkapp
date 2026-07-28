@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import Modal from './Modal';
 import { API_BASE_URL } from '../../api/config';
+import { getAuthToken } from '../../utils/auth';
 
 const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
     const [form, setForm] = useState({
@@ -17,7 +18,7 @@ const ProfileModal = ({ isOpen, onClose, user, role, onUpdate }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = sessionStorage.getItem('token');
+            const token = getAuthToken();
             const endpoint = role === 'vendor' ? `${API_BASE_URL}/vendor/profile` : `${API_BASE_URL}/customer/profile`;
             const res = await axios.put(endpoint, form, {
                 headers: { Authorization: `Bearer ${token}` }

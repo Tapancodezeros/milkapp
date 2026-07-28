@@ -80,6 +80,17 @@ class VendorService {
                 continue;
             }
 
+            let pausedList = [];
+            try {
+                pausedList = JSON.parse(sub.rainPausedDates || '[]');
+            } catch (e) {
+                pausedList = [];
+            }
+            if (pausedList.includes(today)) {
+                skippedCount++;
+                continue;
+            }
+
             const alreadyProcessed = await Transaction.findOne({
                 where: {
                     vendorId,
@@ -124,14 +135,20 @@ class VendorService {
     }
 
     async getReports(vendorId) {
-        const transactions = await Transaction.findAll({ where: { vendorId } });
+        const transactions = await Transaction.findAll({
+            where: {
+                vendorId,
+                status: 'completed',
+                deliveryStatus: { [Op.ne]: 'not_delivered' }
+            }
+        });
         const monthlyData = {};
 
         transactions.forEach(t => {
             const month = t.date.substring(0, 7);
             if (!monthlyData[month]) monthlyData[month] = { revenue: 0, volume: 0 };
-            monthlyData[month].revenue += parseFloat(t.amount);
-            monthlyData[month].volume += parseFloat(t.quantity);
+            monthlyData[month].revenue += parseFloat(t.amount) || 0;
+            monthlyData[month].volume += parseFloat(t.quantity) || 0;
         });
 
         return monthlyData;

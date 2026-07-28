@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearAuth } from '../utils/auth';
 
 // Automatically detect the host to support both localhost and network access
 const getApiBaseUrl = () => {
@@ -24,7 +25,7 @@ axios.interceptors.response.use(
             // Only redirect if not already on login or reset pages
             const path = window.location.pathname;
             if (path !== '/' && path !== '/register' && path !== '/forgot-password' && path !== '/reset-password') {
-                sessionStorage.clear();
+                clearAuth();
                 window.location.href = '/';
             }
         }

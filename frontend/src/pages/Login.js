@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, LogIn, Briefcase, Smile, Loader2, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { API_BASE_URL } from '../api/config';
+import { setAuth, getAuthToken, getAuthUser, getDashboardPath } from '../utils/auth';
 
 const Login = () => {
     const [form, setForm] = useState({ identifier: '', password: '', role: 'customer' });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = getAuthToken();
+        const user = getAuthUser();
+        if (token && user?.role) {
+            navigate(getDashboardPath(user.role), { replace: true });
+        }
+    }, [navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -18,17 +27,10 @@ const Login = () => {
             const res = await axios.post(`${API_BASE_URL}/login`, form);
             const { token, user } = res.data.data;
 
-            sessionStorage.setItem('token', token);
-            sessionStorage.setItem('user', JSON.stringify(user));
+            setAuth(token, user);
 
             toast.success(res.data.message || "Welcome back!");
-            if (user.role === 'vendor') {
-                navigate('/vendor');
-            } else if (user.role === 'admin') {
-                navigate('/admin');
-            } else {
-                navigate('/customer');
-            }
+            navigate(getDashboardPath(user.role), { replace: true });
         } catch (err) {
             console.error("Login Error Details:", err);
             toast.error("Login failed: " + (err.response?.data?.error || err.message));

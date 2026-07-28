@@ -5,6 +5,7 @@ const Admin = require('./Admin');
 const Transaction = require('./Transaction');
 const Subscription = require('./Subscription');
 const InventoryHistory = require('./InventoryHistory');
+const WeatherAdvisory = require('./WeatherAdvisory');
 
 // Associations
 Customer.hasMany(Transaction, { foreignKey: 'customerId' });
@@ -22,6 +23,9 @@ Subscription.belongsTo(Vendor, { foreignKey: 'vendorId' });
 Vendor.hasMany(InventoryHistory, { foreignKey: 'vendorId' });
 InventoryHistory.belongsTo(Vendor, { foreignKey: 'vendorId' });
 
+Vendor.hasMany(WeatherAdvisory, { foreignKey: 'vendorId' });
+WeatherAdvisory.belongsTo(Vendor, { foreignKey: 'vendorId' });
+
 module.exports = {
   sequelize,
   Customer,
@@ -29,5 +33,6 @@ module.exports = {
   Admin,
   Transaction,
   Subscription,
-  InventoryHistory
+  InventoryHistory,
+  WeatherAdvisory
 };

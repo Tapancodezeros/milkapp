@@ -79,7 +79,7 @@ router.put('/transactions/:id/delivery', authenticateToken, async (req, res) => 
 });
 
 // PUT /api/transactions/:id/pay
-router.put('/transactions/:id/pay', authenticateToken, async (req, res) => {
+router.put('/transactions/:id/pay', authenticateToken, Validation.payTransaction, async (req, res) => {
     try {
         if (req.user.role !== UserRole.CUSTOMER) return ApiResponse.error(res, "Only customers can pay", 403);
         const result = await TransactionService.pay(req.params.id, req.user.id);

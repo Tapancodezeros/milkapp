@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, LogOut } from 'lucide-react';
+import { Calendar, LogOut, Clock } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 
 const SubscriptionItem = ({ sub, onToggle, onCancel, onDelete }) => {
@@ -39,22 +39,24 @@ const SubscriptionItem = ({ sub, onToggle, onCancel, onDelete }) => {
                 </div>
             </div>
 
-            <div className="relative z-10 pt-2 flex gap-3">
+            <div className="relative z-10 pt-2 flex flex-col gap-2">
                 {sub.status !== 'cancelled' ? (
                     <>
-                        <button
-                            onClick={() => onToggle(sub.id)}
-                            className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg ${sub.status === 'active' ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-slate-200 dark:shadow-none hover:bg-slate-800 dark:hover:bg-slate-700' : 'bg-emerald-600 text-white shadow-emerald-100 dark:shadow-none hover:bg-emerald-500'}`}
-                        >
-                            {sub.status === 'active' ? 'Pause' : 'Resume'}
-                        </button>
-                        <button
-                            onClick={() => onCancel(sub.id)}
-                            className="px-5 py-3.5 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-300 transition-all active:scale-95 border border-red-100/50 dark:border-red-900/30"
-                            title="Cancel Subscription"
-                        >
-                            <LogOut size={18} strokeWidth={2.5} className="rotate-180" />
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => onToggle(sub.id)}
+                                className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg ${sub.status === 'active' ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-slate-200 dark:shadow-none hover:bg-slate-800 dark:hover:bg-slate-700' : 'bg-emerald-600 text-white shadow-emerald-100 dark:shadow-none hover:bg-emerald-500'}`}
+                            >
+                                {sub.status === 'active' ? 'Pause' : 'Resume'}
+                            </button>
+                            <button
+                                onClick={() => onCancel(sub.id)}
+                                className="px-5 py-3.5 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-300 transition-all active:scale-95 border border-red-100/50 dark:border-red-900/30"
+                                title="Cancel Subscription"
+                            >
+                                <LogOut size={18} strokeWidth={2.5} className="rotate-180" />
+                            </button>
+                        </div>
                     </>
                 ) : (
                     <button
@@ -67,6 +69,9 @@ const SubscriptionItem = ({ sub, onToggle, onCancel, onDelete }) => {
             </div>
 
             <div className="relative z-10 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                    <Clock size={12} strokeWidth={2.5} className="text-slate-400 dark:text-slate-500" /> {sub.deliveryTime || '07:00 AM'}
+                </p>
                 <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em] flex items-center gap-1.5">
                     <Calendar size={12} strokeWidth={2.5} className="text-slate-300 dark:text-slate-600" /> Ends: {sub.endDate}
                 </p>
