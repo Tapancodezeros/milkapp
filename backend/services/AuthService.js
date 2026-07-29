@@ -79,7 +79,8 @@ class AuthService {
             throw new AppError("Invalid identifier or password", 401);
         }
 
-        const token = jwt.sign({ id: user.id, role }, SECRET_KEY, { expiresIn: '1h' });
+        const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
+        const token = jwt.sign({ id: user.id, role }, SECRET_KEY, { expiresIn });
         return {
             token,
             user: {

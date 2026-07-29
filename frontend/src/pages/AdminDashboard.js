@@ -26,7 +26,7 @@ import AdminOverviewTab from '../components/admin/AdminOverviewTab';
 import AdminDataTable from '../components/admin/AdminDataTable';
 import { AdminEditUserModal, AdminAddUserModal } from '../components/admin/AdminUserModal';
 import { getAuthToken, clearAuth } from '../utils/auth';
-import { API_BASE_URL } from '../api/config';
+import { API_BASE_URL, getErrorMessage } from '../api/config';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
             );
         } catch (error) {
             console.error("Error resetting password:", error);
-            toast.error("Failed to generate reset password link.");
+            toast.error(getErrorMessage(error, "Failed to generate reset password link"));
         }
     };
 
@@ -220,7 +220,7 @@ const AdminDashboard = () => {
             fetchData();
         } catch (error) {
             console.error("Error updating delivery status:", error);
-            toast.error("Failed to update delivery status");
+            toast.error(getErrorMessage(error, "Failed to update delivery status"));
         }
     };
 
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
             fetchData();
         } catch (error) {
             console.error("Error updating user:", error);
-            toast.error("Failed to update user details");
+            toast.error(getErrorMessage(error, "Failed to update user details"));
         }
     };
 
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
             fetchData();
         } catch (error) {
             console.error("Error adding user:", error);
-            toast.error(error.response?.data?.message || `Failed to create ${newUserData.role}`);
+            toast.error(getErrorMessage(error, `Failed to create ${newUserData.role}`));
         }
     };
 

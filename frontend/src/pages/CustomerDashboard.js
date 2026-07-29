@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {
-    Loader2,
-    ArrowRight,
-    ArrowLeft,
-    Download,
-    TriangleAlert
-} from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Download, TriangleAlert } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import Header from '../components/shared/Header';
@@ -27,7 +21,7 @@ import ReceiptModal from '../components/customer/ReceiptModal';
 import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import RainPreferencesModal from '../components/customer/RainPreferencesModal';
-import { API_BASE_URL } from '../api/config';
+import { API_BASE_URL, getErrorMessage } from '../api/config';
 
 const CustomerDashboard = () => {
     const [vendors, setVendors] = useState([]);
@@ -379,7 +373,7 @@ const CustomerDashboard = () => {
                 fetchProfile();
                 fetchInsights();
             } catch (err) {
-                toast.error(err.response?.data?.error || "Topup failed");
+                toast.error(getErrorMessage(err, "Topup failed"));
             } finally {
                 setActionLoading(false);
             }
@@ -452,10 +446,11 @@ const CustomerDashboard = () => {
                 }, 1000);
             } catch (err) {
                 setProcessing3DSStep(4);
-                setProcessing3DSMsg(err.response?.data?.error || "Demo card payment authorization failed");
+                const errMsg = getErrorMessage(err, "Demo card payment authorization failed");
+                setProcessing3DSMsg(errMsg);
                 setTimeout(() => {
                     setShow3DSModal(false);
-                    toast.error(err.response?.data?.error || "Demo card topup failed");
+                    toast.error(errMsg);
                 }, 1500);
             } finally {
                 setActionLoading(false);
@@ -487,7 +482,7 @@ const CustomerDashboard = () => {
             fetchProfile();
             fetchInsights();
         } catch (err) {
-            toast.error(err.response?.data?.error || "Withdrawal failed");
+            toast.error(getErrorMessage(err, "Withdrawal failed"));
         } finally {
             setActionLoading(false);
         }
@@ -536,7 +531,7 @@ const CustomerDashboard = () => {
             }
             fetchInsights();
         } catch (err) {
-            toast.error(err.response?.data?.error || "Transaction failed");
+            toast.error(getErrorMessage(err, "Transaction failed"));
         } finally {
             setActionLoading(false);
         }
@@ -554,7 +549,7 @@ const CustomerDashboard = () => {
             fetchSubscriptions();
             fetchInsights();
         } catch (err) {
-            toast.error("Toggle failed");
+            toast.error(getErrorMessage(err, "Toggle failed"));
         }
     };
 
@@ -570,7 +565,7 @@ const CustomerDashboard = () => {
             fetchSubscriptions();
             fetchInsights();
         } catch (err) {
-            toast.error(err.response?.data?.error || "Cancellation failed");
+            toast.error(getErrorMessage(err, "Cancellation failed"));
         }
     };
 
@@ -586,7 +581,7 @@ const CustomerDashboard = () => {
             fetchSubscriptions();
             fetchInsights();
         } catch (err) {
-            toast.error(err.response?.data?.error || "Deletion failed");
+            toast.error(getErrorMessage(err, "Deletion failed"));
         }
     };
 
@@ -600,7 +595,7 @@ const CustomerDashboard = () => {
                 setSelectedReceipt(res.data.data);
             }
         } catch (err) {
-            toast.error("Action failed");
+            toast.error(getErrorMessage(err, "Action failed"));
         }
     };
 

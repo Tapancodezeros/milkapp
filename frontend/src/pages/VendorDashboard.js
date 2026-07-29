@@ -15,7 +15,7 @@ import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import RainyWeatherControl from '../components/vendor/RainyWeatherControl';
 import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 
-import { API_BASE_URL } from '../api/config';
+import { API_BASE_URL, getErrorMessage } from '../api/config';
 
 const VendorDashboard = () => {
     const [sales, setSales] = useState([]);
@@ -161,7 +161,7 @@ const VendorDashboard = () => {
             }
             setRefreshKey(old => old + 1);
         } catch (err) {
-            toast.error("Action Failed: " + (err.response?.data?.error || err.message));
+            toast.error(getErrorMessage(err, "Action failed"));
         }
     };
 
@@ -172,7 +172,7 @@ const VendorDashboard = () => {
             toast.success(status === 'delivered' ? "Marked as Delivered" : "Marked as Failed");
             setRefreshKey(old => old + 1);
         } catch (err) {
-            toast.error("Failed to update status");
+            toast.error(getErrorMessage(err, "Failed to update delivery status"));
         }
     };
 
@@ -190,7 +190,7 @@ const VendorDashboard = () => {
             toast.success(res.data.message);
             setRefreshKey(old => old + 1);
         } catch (err) {
-            toast.error("Failed to toggle availability");
+            toast.error(getErrorMessage(err, "Failed to toggle availability"));
         }
     };
 

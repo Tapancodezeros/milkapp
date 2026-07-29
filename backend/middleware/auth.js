@@ -8,7 +8,7 @@ const authenticateToken = (req, res, next) => {
     if (!token) return res.status(401).json({ error: "Access Denied" });
 
     jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.status(403).json({ error: "Invalid Token" });
+        if (err) return res.status(401).json({ error: "Unauthorized: Invalid or expired token" });
         req.user = user;
         next();
     });
