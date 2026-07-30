@@ -82,4 +82,22 @@ router.put('/toggle-availability', authenticateToken, async (req, res) => {
     }
 });
 
+const AuditLogService = require('../services/AuditLogService');
+
+router.get('/activity-logs', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== UserRole.VENDOR) return ApiResponse.error(res, "Not a vendor", 403);
+        const { page = 1, limit = 10 } = req.query;
+        const logs = await AuditLogService.getAuditLogs({
+            page,
+            limit,
+            userRole: UserRole.VENDOR,
+            search: req.user.id.toString()
+        });
+        return ApiResponse.success(res, "Activity logs fetched successfully", logs);
+    } catch (err) {
+        return handleRouteError(res, err);
+    }
+});
+
 module.exports = router;

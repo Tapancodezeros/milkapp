@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { customerDb } = require('../config/database');
 
-const Subscription = sequelize.define('Subscription', {
+const Subscription = customerDb.define('Subscription', {
     quantity: { type: DataTypes.FLOAT, allowNull: false },
     status: { type: DataTypes.ENUM('active', 'paused', 'cancelled'), defaultValue: 'active' },
     duration: { type: DataTypes.ENUM('7_days', '1_month', '3_months'), allowNull: false },

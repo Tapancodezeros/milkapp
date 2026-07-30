@@ -2,6 +2,7 @@ const { Subscription, Vendor, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { UserRole } = require('../utils/constants');
 const AppError = require('../utils/appError');
+const AuditLogService = require('./AuditLogService');
 
 class SubscriptionService {
     async subscribe(customerId, vendorId, quantity, duration, deliveryTime = '07:00 AM') {
@@ -44,21 +45,50 @@ class SubscriptionService {
             fixedRate: vendor.rate
         });
 
+        AuditLogService.logAction({
+            userId: customerId,
+            userRole: UserRole.CUSTOMER,
+            action: 'SUBSCRIPTION_CREATE',
+            entity: 'Subscription',
+            entityId: sub.id,
+            details: { vendorId, quantity, duration, deliveryTime }
+        });
+
         return sub;
     }
 
     async getSubscriptions(userId, role) {
         const where = role === UserRole.VENDOR ? { vendorId: userId } : { customerId: userId };
-        const include = role === UserRole.VENDOR
-            ? [{ model: Customer, attributes: ['name', 'phone', 'email'] }]
-            : [{ model: Vendor, attributes: ['name', 'rate'] }];
 
-        return await Subscription.findAll({
+        if (role === UserRole.VENDOR) {
+            return await Subscription.findAll({
+                where,
+                include: [{ model: Customer, attributes: ['name', 'phone', 'email'] }],
+                order: [['createdAt', 'DESC']]
+            });
+        }
+
+        const subscriptions = await Subscription.findAll({
             where,
-            include,
             order: [['createdAt', 'DESC']]
         });
+
+        if (subscriptions.length > 0) {
+            const vendorIds = [...new Set(subscriptions.map(s => s.vendorId))];
+            const vendors = await Vendor.findAll({
+                where: { id: vendorIds },
+                attributes: ['id', 'name', 'rate']
+            });
+            const vMap = new Map(vendors.map(v => [v.id, v.toJSON ? v.toJSON() : v]));
+            subscriptions.forEach(s => {
+                const v = vMap.get(s.vendorId);
+                if (v) s.setDataValue ? s.setDataValue('Vendor', v) : (s.Vendor = v);
+            });
+        }
+
+        return subscriptions;
     }
+
 
     async updateSubscription(id, data, userId, role) {
         const { status, quantity, deliveryTime } = data;
@@ -79,6 +109,16 @@ class SubscriptionService {
         if (quantity !== undefined) sub.quantity = quantity;
         if (deliveryTime !== undefined) sub.deliveryTime = deliveryTime;
         await sub.save();
+
+        AuditLogService.logAction({
+            userId,
+            userRole: role,
+            action: 'SUBSCRIPTION_UPDATE',
+            entity: 'Subscription',
+            entityId: sub.id,
+            details: { updatedFields: { status, quantity, deliveryTime } }
+        });
+
         return sub;
     }
 
@@ -94,8 +134,19 @@ class SubscriptionService {
             throw new AppError("Cancelled subscriptions cannot be reactivated", 409);
         }
 
+        const oldStatus = sub.status;
         sub.status = sub.status === 'active' ? 'paused' : 'active';
         await sub.save();
+
+        AuditLogService.logAction({
+            userId,
+            userRole: UserRole.CUSTOMER,
+            action: 'SUBSCRIPTION_STATUS_TOGGLE',
+            entity: 'Subscription',
+            entityId: sub.id,
+            details: { fromStatus: oldStatus, toStatus: sub.status }
+        });
+
         return sub;
     }
 
@@ -110,6 +161,16 @@ class SubscriptionService {
 
         sub.status = 'cancelled';
         await sub.save();
+
+        AuditLogService.logAction({
+            userId,
+            userRole: UserRole.CUSTOMER,
+            action: 'SUBSCRIPTION_CANCEL',
+            entity: 'Subscription',
+            entityId: sub.id,
+            details: { status: 'cancelled' }
+        });
+
         return sub;
     }
 
@@ -123,6 +184,16 @@ class SubscriptionService {
         }
 
         await sub.destroy();
+
+        AuditLogService.logAction({
+            userId,
+            userRole: UserRole.CUSTOMER,
+            action: 'SUBSCRIPTION_DELETE',
+            entity: 'Subscription',
+            entityId: id,
+            details: { deleted: true }
+        });
+
         return { message: "Subscription deleted" };
     }
 }

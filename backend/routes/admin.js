@@ -54,10 +54,18 @@ router.get('/overview', async (req, res) => {
             limit: 5,
             order: [['date', 'DESC'], ['createdAt', 'DESC']],
             include: [
-                { model: Customer, attributes: ['name', 'phone'] },
-                { model: Vendor, attributes: ['name', 'phone'] }
+                { model: Customer, attributes: ['name', 'phone'] }
             ]
         });
+        if (recentTransactions.length > 0) {
+            const vIds = [...new Set(recentTransactions.map(t => t.vendorId))];
+            const vendors = await Vendor.findAll({ where: { id: vIds }, attributes: ['id', 'name', 'phone'] });
+            const vMap = new Map(vendors.map(v => [v.id, v.toJSON ? v.toJSON() : v]));
+            recentTransactions.forEach(t => {
+                const v = vMap.get(t.vendorId);
+                if (v) t.setDataValue ? t.setDataValue('Vendor', v) : (t.Vendor = v);
+            });
+        }
 
         return ApiResponse.success(res, "Overview stats fetched successfully", {
             totalCustomers,
@@ -130,19 +138,26 @@ router.get('/transactions', async (req, res) => {
 
         if (search) {
             whereClause[Op.or] = [
-                { '$Customer.name$': { [Op.iLike]: `%${search}%` } },
-                { '$Vendor.name$': { [Op.iLike]: `%${search}%` } }
+                { '$Customer.name$': { [Op.iLike]: `%${search}%` } }
             ];
         }
 
         const transactions = await Transaction.findAll({
             where: whereClause,
             include: [
-                { model: Customer, attributes: ['name', 'phone'] },
-                { model: Vendor, attributes: ['name', 'phone'] }
+                { model: Customer, attributes: ['name', 'phone'] }
             ],
             order: [['createdAt', 'DESC']]
         });
+        if (transactions.length > 0) {
+            const vIds = [...new Set(transactions.map(t => t.vendorId))];
+            const vendors = await Vendor.findAll({ where: { id: vIds }, attributes: ['id', 'name', 'phone'] });
+            const vMap = new Map(vendors.map(v => [v.id, v.toJSON ? v.toJSON() : v]));
+            transactions.forEach(t => {
+                const v = vMap.get(t.vendorId);
+                if (v) t.setDataValue ? t.setDataValue('Vendor', v) : (t.Vendor = v);
+            });
+        }
         return ApiResponse.success(res, "Transactions fetched successfully", transactions);
     } catch (err) {
         return handleRouteError(res, err);
@@ -154,15 +169,24 @@ router.get('/subscriptions', async (req, res) => {
     try {
         const subscriptions = await Subscription.findAll({
             include: [
-                { model: Customer, attributes: ['name', 'phone'] },
-                { model: Vendor, attributes: ['name', 'phone'] }
+                { model: Customer, attributes: ['name', 'phone'] }
             ]
         });
+        if (subscriptions.length > 0) {
+            const vIds = [...new Set(subscriptions.map(s => s.vendorId))];
+            const vendors = await Vendor.findAll({ where: { id: vIds }, attributes: ['id', 'name', 'phone'] });
+            const vMap = new Map(vendors.map(v => [v.id, v.toJSON ? v.toJSON() : v]));
+            subscriptions.forEach(s => {
+                const v = vMap.get(s.vendorId);
+                if (v) s.setDataValue ? s.setDataValue('Vendor', v) : (s.Vendor = v);
+            });
+        }
         return ApiResponse.success(res, "Subscriptions fetched successfully", subscriptions);
     } catch (err) {
         return handleRouteError(res, err);
     }
 });
+
 
 // Delete User (Customer or Vendor)
 router.delete('/user/:role/:id', async (req, res) => {
@@ -272,6 +296,28 @@ router.post('/user/create', async (req, res) => {
         delete userResponse.password;
 
         return ApiResponse.success(res, "User created successfully", userResponse);
+    } catch (err) {
+        return handleRouteError(res, err);
+    }
+});
+
+const AuditLogService = require('../services/AuditLogService');
+
+// Audit Logs Route
+router.get('/audit-logs', async (req, res) => {
+    try {
+        const { page, limit, action, entity, userRole, search, startDate, endDate } = req.query;
+        const result = await AuditLogService.getAuditLogs({
+            page,
+            limit,
+            action,
+            entity,
+            userRole,
+            search,
+            startDate,
+            endDate
+        });
+        return ApiResponse.success(res, "Audit logs retrieved successfully", result);
     } catch (err) {
         return handleRouteError(res, err);
     }

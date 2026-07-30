@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { customerDb } = require('../config/database');
 
-const Customer = sequelize.define('Customer', {
+const Customer = customerDb.define('Customer', {
     name: { type: DataTypes.STRING, allowNull: false, unique: true },
     phone: { type: DataTypes.STRING, unique: true },
     email: { type: DataTypes.STRING, allowNull: true, unique: true },

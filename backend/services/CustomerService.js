@@ -2,6 +2,8 @@ const { Customer, Transaction, Subscription, Vendor } = require('../models');
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
 const AppError = require('../utils/appError');
+const AuditLogService = require('./AuditLogService');
+const { UserRole } = require('../utils/constants');
 
 class CustomerService {
     async getProfile(id) {
@@ -31,7 +33,6 @@ class CustomerService {
         const [pendingTransactions, completedTransactions, activeSubscriptions, availableVendors] = await Promise.all([
             Transaction.findAll({
                 where: { customerId: id, status: 'pending' },
-                include: [{ model: Vendor, attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable'] }],
                 order: [['date', 'ASC'], ['createdAt', 'ASC']]
             }),
             Transaction.findAll({
@@ -40,12 +41,10 @@ class CustomerService {
                     status: 'completed',
                     deliveryStatus: { [Op.ne]: 'not_delivered' }
                 },
-                include: [{ model: Vendor, attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable'] }],
                 order: [['date', 'DESC'], ['createdAt', 'DESC']]
             }),
             Subscription.findAll({
-                where: { customerId: id, status: 'active' },
-                include: [{ model: Vendor, attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable'] }]
+                where: { customerId: id, status: 'active' }
             }),
             Vendor.findAll({
                 where: {
@@ -56,6 +55,29 @@ class CustomerService {
                 order: [['rate', 'ASC'], ['availableMilk', 'DESC']]
             })
         ]);
+
+        // Populate Vendor details manually across database instances
+        const allVendorIds = [...new Set([
+            ...pendingTransactions.map(t => t.vendorId),
+            ...completedTransactions.map(t => t.vendorId),
+            ...activeSubscriptions.map(s => s.vendorId)
+        ])];
+        if (allVendorIds.length > 0) {
+            const vendors = await Vendor.findAll({
+                where: { id: allVendorIds },
+                attributes: ['id', 'name', 'rate', 'availableMilk', 'isAvailable']
+            });
+            const vendorMap = new Map(vendors.map(v => [v.id, v.toJSON ? v.toJSON() : v]));
+            [...pendingTransactions, ...completedTransactions].forEach(t => {
+                const v = vendorMap.get(t.vendorId);
+                if (v) t.setDataValue ? t.setDataValue('Vendor', v) : (t.Vendor = v);
+            });
+            activeSubscriptions.forEach(s => {
+                const v = vendorMap.get(s.vendorId);
+                if (v) s.setDataValue ? s.setDataValue('Vendor', v) : (s.Vendor = v);
+            });
+        }
+
 
         const pendingAmount = pendingTransactions.reduce((sum, transaction) => {
             return sum + (parseFloat(transaction.amount) || 0);
@@ -193,6 +215,16 @@ class CustomerService {
 
         customer.walletBalance = newBalance;
         await customer.save();
+
+        AuditLogService.logAction({
+            userId: id,
+            userRole: UserRole.CUSTOMER,
+            action: 'WALLET_TOPUP',
+            entity: 'Customer',
+            entityId: id,
+            details: { amount: topupAmt, newBalance }
+        });
+
         return {
             balance: customer.walletBalance,
             paymentMethod: options.isDemoCard ? 'demo_card' : 'password',
@@ -230,6 +262,16 @@ class CustomerService {
         const newBalance = Math.round((currentBalance - withdrawAmt) * 100) / 100;
         customer.walletBalance = newBalance;
         await customer.save();
+
+        AuditLogService.logAction({
+            userId: id,
+            userRole: UserRole.CUSTOMER,
+            action: 'WALLET_WITHDRAW',
+            entity: 'Customer',
+            entityId: id,
+            details: { amount: withdrawAmt, newBalance }
+        });
+
         return { balance: customer.walletBalance };
     }
 

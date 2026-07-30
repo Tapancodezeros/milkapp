@@ -15,7 +15,8 @@ import {
     Sun,
     Download,
     AlertTriangle,
-    DollarSign
+    DollarSign,
+    ShieldCheck
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-hot-toast';
@@ -24,6 +25,7 @@ import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminOverviewTab from '../components/admin/AdminOverviewTab';
 import AdminDataTable from '../components/admin/AdminDataTable';
+import AdminAuditLogTab from '../components/admin/AdminAuditLogTab';
 import { AdminEditUserModal, AdminAddUserModal } from '../components/admin/AdminUserModal';
 import { getAuthToken, clearAuth } from '../utils/auth';
 import { API_BASE_URL, getErrorMessage } from '../api/config';
@@ -380,6 +382,7 @@ const AdminDashboard = () => {
         { id: 'transactions', label: 'Transactions', icon: CreditCard },
         { id: 'subscriptions', label: 'Subscriptions', icon: Calendar },
         { id: 'ledger', label: 'Ledger Audit', icon: DollarSign },
+        { id: 'audit-logs', label: 'System Audit Logs', icon: ShieldCheck },
     ];
 
     return (
@@ -418,7 +421,7 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-3 ml-3 sm:ml-4">
-                        {activeTab !== 'overview' && (
+                        {activeTab !== 'overview' && activeTab !== 'audit-logs' && (
                             <button
                                 onClick={handleExport}
                                 className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}
@@ -452,11 +455,13 @@ const AdminDashboard = () => {
                     />
 
                     <div>
-                        <h2 className={`text-xl sm:text-2xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activeTab === 'overview' ? 'Dashboard Overview' : activeTab}</h2>
-                        <p className="text-slate-500 text-xs sm:text-sm mt-0.5 sm:mt-1">{activeTab === 'overview' ? 'View key metrics and system performance' : `Manage and monitor all system ${activeTab}`}</p>
+                        <h2 className={`text-xl sm:text-2xl font-black capitalize ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activeTab === 'overview' ? 'Dashboard Overview' : activeTab === 'audit-logs' ? 'System Audit Logs' : activeTab}</h2>
+                        <p className="text-slate-500 text-xs sm:text-sm mt-0.5 sm:mt-1">{activeTab === 'overview' ? 'View key metrics and system performance' : activeTab === 'audit-logs' ? 'Monitor immutable security and operational audit logs from milkapp_audit database' : `Manage and monitor all system ${activeTab}`}</p>
                     </div>
 
-                    {loading && !overviewStats && data.length === 0 ? (
+                    {activeTab === 'audit-logs' ? (
+                        <AdminAuditLogTab isDarkMode={isDarkMode} />
+                    ) : loading && !overviewStats && data.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-80 sm:h-96 gap-4">
                             <Loader2 className="animate-spin text-blue-500" size={40} />
                             <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Loading data...</p>

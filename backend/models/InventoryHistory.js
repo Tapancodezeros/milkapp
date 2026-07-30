@@ -1,10 +1,11 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { primaryDb } = require('../config/database');
 
-const InventoryHistory = sequelize.define('InventoryHistory', {
+const InventoryHistory = primaryDb.define('InventoryHistory', {
     amount: { type: DataTypes.FLOAT, allowNull: false },
     date: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
     vendorId: { type: DataTypes.INTEGER, allowNull: false }
 });
 
 module.exports = InventoryHistory;
+

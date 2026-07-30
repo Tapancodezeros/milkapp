@@ -49,9 +49,18 @@ app.use('/api', routes);
 // --- SERVER START ---
 async function startServer() {
   try {
-    await sequelize.authenticate();
-    console.log(`✅ Connected to PostgreSQL on port ${process.env.DB_PORT || 5433}`);
-    await sequelize.sync({ alter: true });
+    const { primaryDb, customerDb, auditDb } = require('./config/database');
+    await primaryDb.authenticate();
+    console.log(`✅ Connected to Primary PostgreSQL (${process.env.DB_NAME || 'milkapp'}) on port ${process.env.DB_PORT || 5432}`);
+    await customerDb.authenticate();
+    console.log(`✅ Connected to Customer PostgreSQL (${process.env.DB2_NAME || 'milkapp_customer'}) on port ${process.env.DB2_PORT || 5432}`);
+    await auditDb.authenticate();
+    console.log(`✅ Connected to Audit PostgreSQL (${process.env.DB_AUDIT_NAME || 'milkapp_audit'}) on port ${process.env.DB_AUDIT_PORT || 5432}`);
+
+    await primaryDb.sync({ alter: true });
+    await customerDb.sync({ alter: true });
+    await auditDb.sync({ alter: true });
+
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server Status:`);
       console.log(`   🏠 Local:   http://localhost:${PORT}`);

@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { customerDb } = require('../config/database');
 
-const Transaction = sequelize.define('Transaction', {
+const Transaction = customerDb.define('Transaction', {
     date: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
     quantity: { type: DataTypes.FLOAT, allowNull: false },
     amount: { type: DataTypes.FLOAT, allowNull: false },
@@ -13,3 +13,4 @@ const Transaction = sequelize.define('Transaction', {
 });
 
 module.exports = Transaction;
+

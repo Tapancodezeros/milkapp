@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { UserRole } = require('../utils/constants');
 const AppError = require('../utils/appError');
+const AuditLogService = require('./AuditLogService');
 
 const SECRET_KEY = process.env.SECRET_KEY || "supersecretkey";
 
@@ -42,11 +43,21 @@ class AuthService {
             throw new AppError("Name already registered", 409);
         }
 
-        await Model.create({
+        const newUser = await Model.create({
             name,
             phone,
             email: normalizedEmail,
             password: hashedPassword
+        });
+
+        AuditLogService.logAction({
+            userId: newUser.id,
+            userRole: role,
+            userEmail: normalizedEmail,
+            action: 'USER_REGISTER',
+            entity: 'Auth',
+            entityId: newUser.id,
+            details: { name, phone, role }
         });
 
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -71,16 +82,44 @@ class AuthService {
         });
 
         if (!user) {
+            AuditLogService.logAction({
+                userRole: role,
+                action: 'USER_LOGIN_FAILED',
+                entity: 'Auth',
+                details: { identifier: normalizedIdentifier, reason: 'User not found' },
+                status: 'FAILED'
+            });
             throw new AppError("Invalid identifier or password", 401);
         }
 
         const validPass = await bcrypt.compare(password, user.password);
         if (!validPass) {
+            AuditLogService.logAction({
+                userId: user.id,
+                userRole: role,
+                userEmail: user.email,
+                action: 'USER_LOGIN_FAILED',
+                entity: 'Auth',
+                entityId: user.id,
+                details: { reason: 'Invalid password' },
+                status: 'FAILED'
+            });
             throw new AppError("Invalid identifier or password", 401);
         }
 
         const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
         const token = jwt.sign({ id: user.id, role }, SECRET_KEY, { expiresIn });
+
+        AuditLogService.logAction({
+            userId: user.id,
+            userRole: role,
+            userEmail: user.email,
+            action: 'USER_LOGIN',
+            entity: 'Auth',
+            entityId: user.id,
+            details: { role }
+        });
+
         return {
             token,
             user: {

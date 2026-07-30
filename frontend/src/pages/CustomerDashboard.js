@@ -21,6 +21,7 @@ import ReceiptModal from '../components/customer/ReceiptModal';
 import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import RainPreferencesModal from '../components/customer/RainPreferencesModal';
+import UserActivityLogTab from '../components/shared/UserActivityLogTab';
 import { API_BASE_URL, getErrorMessage } from '../api/config';
 
 const CustomerDashboard = () => {
@@ -816,6 +817,10 @@ const CustomerDashboard = () => {
                         onShowReceipt={(t) => setSelectedReceipt(t)}
                         onPay={handlePayTransaction}
                     />
+                </div>
+
+                <div className="pt-8">
+                    <UserActivityLogTab userRole="customer" isDarkMode={false} />
                 </div>
 
             </main>

@@ -13,6 +13,7 @@ import LedgerStream from '../components/shared/LedgerStream';
 import ProfileModal from '../components/shared/ProfileModal';
 import RainyWeatherBanner from '../components/shared/RainyWeatherBanner';
 import RainyWeatherControl from '../components/vendor/RainyWeatherControl';
+import UserActivityLogTab from '../components/shared/UserActivityLogTab';
 import { getAuthToken, getAuthUser, setAuth, clearAuth } from '../utils/auth';
 
 import { API_BASE_URL, getErrorMessage } from '../api/config';
@@ -322,6 +323,7 @@ const VendorDashboard = () => {
                             onUpdateDelivery={handleUpdateDelivery}
                             onExport={handleExportSales}
                         />
+                        <UserActivityLogTab userRole="vendor" isDarkMode={false} />
                     </div>
                 </div>
             </main>

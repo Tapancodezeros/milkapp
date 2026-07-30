@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { primaryDb } = require('../config/database');
 
-const WeatherAdvisory = sequelize.define('WeatherAdvisory', {
+const WeatherAdvisory = primaryDb.define('WeatherAdvisory', {
     isRainyMode: { type: DataTypes.BOOLEAN, defaultValue: false },
     severity: { type: DataTypes.ENUM('light', 'moderate', 'heavy'), defaultValue: 'moderate' },
     advisoryTitle: { type: DataTypes.STRING, defaultValue: 'Rainy Weather Alert' },
@@ -14,3 +14,4 @@ const WeatherAdvisory = sequelize.define('WeatherAdvisory', {
 });
 
 module.exports = WeatherAdvisory;
+

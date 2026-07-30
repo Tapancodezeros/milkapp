@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { sequelize, Admin, Customer, Vendor, Subscription, Transaction, InventoryHistory } = require('./models');
+const { primaryDb, customerDb, Admin, Customer, Vendor, Subscription, Transaction, InventoryHistory } = require('./models');
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -99,7 +99,9 @@ const seedData = async () => {
   let exitCode = 0;
 
   try {
-    await sequelize.sync(shouldReset ? { force: true } : { alter: true });
+    await primaryDb.sync(shouldReset ? { force: true } : { alter: true });
+    await customerDb.sync(shouldReset ? { force: true } : { alter: true });
+
 
     if (shouldReset) {
       console.log('♻️  Database reset enabled. Recreating demo data from scratch.');
@@ -326,7 +328,8 @@ const seedData = async () => {
     exitCode = 1;
     console.error('❌ Seed data failed:', error);
   } finally {
-    await sequelize.close();
+    await primaryDb.close();
+    await customerDb.close();
     process.exitCode = exitCode;
   }
 };

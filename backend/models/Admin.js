@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { primaryDb } = require('../config/database');
 
-const Admin = sequelize.define('Admin', {
+const Admin = primaryDb.define('Admin', {
     name: { type: DataTypes.STRING, allowNull: false, unique: true },
     phone: { type: DataTypes.STRING, unique: true },
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
